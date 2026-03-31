@@ -1,0 +1,10 @@
+services:
+  devclip-license:
+    build: ./server
+    ports:
+      - "8787:8787"
+    environment:
+      PORT: "8787"
+      # Optional: comma-separated full keys (in addition to dc_pro_ / dc_ent_ prefixes)
+      # DEVCLIP_EXTRA_ENTERPRISE_KEYS: "org-secret-key-1"
+      # DEVCLIP_EXTRA_PRO_KEYS: "team-key-1"

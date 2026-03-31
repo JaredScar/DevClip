@@ -1,0 +1,14 @@
+{
+  "name": "devclip-server",
+  "version": "1.0.0",
+  "private": true,
+  "license": "GPL-3.0-only",
+  "type": "module",
+  "description": "Minimal DevClip-compatible license API (self-hosted).",
+  "scripts": {
+    "start": "node src/index.mjs"
+  },
+  "dependencies": {
+    "fastify": "^5.2.1"
+  }
+}

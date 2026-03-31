@@ -1,0 +1,49 @@
+{
+  "name": "devclip",
+  "version": "1.0.0",
+  "description": "Developer-focused clipboard manager (Electron + Angular): history, snippets, AI, sync, integrations.",
+  "main": "dist/electron/main.js",
+  "scripts": {
+    "rebuild:native": "electron-rebuild -f -w better-sqlite3",
+    "dev": "concurrently -k \"npm run dev:ng\" \"npm run dev:electron\"",
+    "dev:ng": "cd angular-app && npx ng serve --port 4200",
+    "dev:electron": "wait-on http://localhost:4200 && npm run build:electron && cross-env DEVCLIP_DEV=1 electron .",
+    "build:electron": "tsc -p tsconfig.electron.json && npm run copy:schema",
+    "copy:schema": "node -e \"require('fs').mkdirSync('dist/database',{recursive:true});require('fs').copyFileSync('database/schema.sql','dist/database/schema.sql')\"",
+    "build:ng": "cd angular-app && npx ng build --configuration production",
+    "build:all": "npm run build:ng && npm run build:electron",
+    "start": "cross-env DEVCLIP_DEV=0 electron .",
+    "pack": "npm run build:all && electron-builder --dir",
+    "dist": "npm run build:all && electron-builder",
+    "postinstall": "electron-rebuild -f -w better-sqlite3"
+  },
+  "keywords": [
+    "clipboard",
+    "electron",
+    "angular",
+    "sqlite",
+    "developer-tools",
+    "productivity",
+    "snippets",
+    "windows"
+  ],
+  "author": "DevClip contributors",
+  "license": "GPL-3.0-only",
+  "engines": {
+    "node": ">=20"
+  },
+  "devDependencies": {
+    "@types/better-sqlite3": "^7.6.12",
+    "@types/node": "^22.10.0",
+    "concurrently": "^9.1.2",
+    "cross-env": "^7.0.3",
+    "electron": "^34.0.0",
+    "electron-builder": "^26.0.0",
+    "electron-rebuild": "^3.2.9",
+    "typescript": "^5.7.2",
+    "wait-on": "^8.0.1"
+  },
+  "dependencies": {
+    "better-sqlite3": "^11.7.0"
+  }
+}

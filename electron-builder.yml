@@ -1,0 +1,13 @@
+appId: com.devclip.app
+productName: DevClip
+directories:
+  output: release
+files:
+  - dist/**/*
+  - angular-app/dist/**/*
+  - package.json
+extraResources:
+  - from: database/schema.sql
+    to: schema.sql
+win:
+  target: nsis
