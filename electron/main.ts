@@ -1,4 +1,5 @@
 import { createHash } from 'crypto';
+import { existsSync } from 'fs';
 import { app, BrowserWindow, clipboard, dialog, globalShortcut, screen, session } from 'electron';
 import * as path from 'path';
 import { getSourceLabelSync } from './sourceApp';
@@ -25,6 +26,25 @@ import { processSyncOutbox } from './syncOps';
 
 /** Use file bundle unless explicitly in dev server mode (see package.json `dev:electron`). */
 const isDev = process.env.DEVCLIP_DEV === '1';
+
+const projectRoot = path.join(__dirname, '..', '..');
+
+function resolveAppIconPath(): string | undefined {
+  const fromPublic = path.join(projectRoot, 'angular-app', 'public', 'devclip_icon_transparent.svg');
+  const fromBuild = path.join(
+    projectRoot,
+    'angular-app',
+    'dist',
+    'angular-app',
+    'browser',
+    'devclip_icon_transparent.svg'
+  );
+  if (isDev && existsSync(fromPublic)) return fromPublic;
+  if (!isDev && existsSync(fromBuild)) return fromBuild;
+  if (existsSync(fromBuild)) return fromBuild;
+  if (existsSync(fromPublic)) return fromPublic;
+  return undefined;
+}
 
 const indexHtmlPath = path.join(
   __dirname,
@@ -118,18 +138,21 @@ function createMainWindow(): BrowserWindow {
   const winHeight = 700;
   const { width: sw, height: sh } = screen.getPrimaryDisplay().workAreaSize;
 
+  const iconPath = resolveAppIconPath();
   const win = new BrowserWindow({
     width: winWidth,
     height: winHeight,
     x: Math.round((sw - winWidth) / 2),
     y: Math.round((sh - winHeight) / 2),
-    frame: false,
+    title: 'DevClip',
+    frame: true,
     transparent: false,
     backgroundColor: '#0d0d0d',
     alwaysOnTop: false,
     skipTaskbar: false,
     resizable: true,
     show: true,
+    ...(iconPath ? { icon: iconPath } : {}),
     webPreferences: {
       contextIsolation: true,
       nodeIntegration: false,

@@ -11,6 +11,17 @@ import { FeatureFlagService } from '../../services/feature-flag.service';
   imports: [CommonModule, FormsModule],
   template: `
     <div class="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto pr-1 text-sm">
+      <div
+        class="rounded-lg border border-white/10 bg-[#0a0a0a] px-4 py-5 lite:border-zinc-200 lite:bg-zinc-100"
+      >
+        <img
+          src="devclip_logo.svg"
+          alt="DevClip — clipboard for developers"
+          class="mx-auto w-full max-w-md"
+          width="680"
+          height="420"
+        />
+      </div>
       <section class="rounded-lg border border-white/10 p-3 lite:border-zinc-200">
         <h3 class="mb-2 text-xs font-bold uppercase tracking-wide text-zinc-500 lite:text-zinc-600">
           License &amp; account

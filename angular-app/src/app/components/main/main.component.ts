@@ -62,14 +62,18 @@ interface NavItem {
   template: `
     <header
       class="flex h-9 shrink-0 items-center border-b border-white/10 bg-[#0a0a0a] px-3 lite:border-zinc-200 lite:bg-zinc-200"
-      style="-webkit-app-region: drag"
     >
-      <span class="text-xs font-medium text-zinc-500 lite:text-zinc-600">DevClip</span>
+      <img
+        src="devclip_icon_transparent.svg"
+        alt="DevClip"
+        class="h-6 w-6 shrink-0 object-contain"
+        width="24"
+        height="24"
+      />
       @if (syncHeader().text) {
         <button
           type="button"
           class="ml-auto flex max-w-[140px] items-center gap-1.5 truncate rounded px-2 py-0.5 text-[10px] font-medium text-zinc-400 hover:bg-white/10 hover:text-white lite:text-zinc-600 lite:hover:bg-zinc-300 lite:hover:text-zinc-900"
-          style="-webkit-app-region: no-drag"
           title="Open Sync"
           (click)="main.setTab('sync')"
         >
@@ -89,22 +93,23 @@ interface NavItem {
     <div class="flex min-h-0 flex-1 flex-row">
       <aside
         class="flex w-56 shrink-0 flex-col border-r border-white/10 bg-[#0a0a0a] lite:border-zinc-200 lite:bg-zinc-200"
-        style="-webkit-app-region: drag"
       >
         <div class="flex items-center gap-2 border-b border-white/5 px-3 py-3">
           <span
-            class="inline-flex h-8 w-8 items-center justify-center rounded-lg bg-devclip-accent/15 text-devclip-accent"
+            class="inline-flex h-8 w-8 shrink-0 items-center justify-center overflow-hidden rounded-lg bg-devclip-accent/10"
           >
-            <svg class="h-4 w-4" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-              <path
-                d="M19 3h-4.18C14.4 1.84 13.3 1 12 1c-1.3 0-2.4.84-2.82 2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-7 0c.55 0 1 .45 1 1s-.45 1-1 1-1-.45-1-1 .45-1 1-1zm7 16H5V5h2v3h10V5h2v14z"
-              />
-            </svg>
+            <img
+              src="devclip_icon_transparent.svg"
+              alt=""
+              class="h-full w-full object-contain"
+              width="32"
+              height="32"
+            />
           </span>
           <span class="text-sm font-semibold text-white lite:text-zinc-900">DevClip</span>
         </div>
 
-        <nav class="min-h-0 flex-1 space-y-0.5 overflow-y-auto px-2 py-2" style="-webkit-app-region: no-drag">
+        <nav class="min-h-0 flex-1 space-y-0.5 overflow-y-auto px-2 py-2">
           @for (item of navItems; track item.id) {
             @if (!item.enterpriseOnly || featureFlags.isEnterpriseUnlocked()) {
             <button
@@ -130,34 +135,9 @@ interface NavItem {
             }
           }
         </nav>
-
-        <div
-          class="flex shrink-0 items-center justify-end gap-1 border-t border-white/10 p-2"
-          style="-webkit-app-region: no-drag"
-        >
-          <button
-            type="button"
-            class="flex h-8 w-9 items-center justify-center rounded text-zinc-400 hover:bg-white/10 hover:text-white"
-            title="Minimize"
-            (click)="onMinimize()"
-          >
-            <span class="pb-0.5 text-lg leading-none">&#8211;</span>
-          </button>
-          <button
-            type="button"
-            class="flex h-8 w-9 items-center justify-center rounded text-zinc-400 hover:bg-red-600/80 hover:text-white"
-            title="Close"
-            (click)="onClose()"
-          >
-            <span class="text-lg leading-none">&#215;</span>
-          </button>
-        </div>
       </aside>
 
-      <main
-        class="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden p-4 lite:bg-zinc-100"
-        style="-webkit-app-region: no-drag"
-      >
+      <main class="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden p-4 lite:bg-zinc-100">
         @switch (main.activeTab()) {
           @case ('history') {
             <div class="flex min-h-0 flex-1 flex-col gap-3 overflow-hidden">
@@ -416,14 +396,6 @@ export class MainComponent implements OnInit, OnDestroy {
         this.syncHeader.set({ text: 'Sync on', tone: 'idle' });
       })
       .catch(() => this.syncHeader.set({ text: '', tone: 'idle' }));
-  }
-
-  onMinimize(): void {
-    void window.devclip.minimizeMain();
-  }
-
-  onClose(): void {
-    window.close();
   }
 
   onKey(ev: KeyboardEvent) {
