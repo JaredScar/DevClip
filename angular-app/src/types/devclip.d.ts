@@ -250,10 +250,11 @@ export interface DevClipApi {
     policyDisableAi: boolean;
     policyDisableSync: boolean;
     policyForcePrivate: boolean;
+    policySignatureValid: boolean;
   }>;
   enterpriseSaveSettings: (patch: Record<string, string>) => Promise<{ ok: true }>;
   enterpriseSetApiToken: (token: string) => Promise<{ ok: true } | { ok: false; error: string }>;
-  enterpriseFetchPolicy: () => Promise<{ ok: true } | { ok: false; error: string }>;
+  enterpriseFetchPolicy: () => Promise<{ ok: true; signatureValid: boolean } | { ok: false; error: string }>;
   enterpriseImportOrgSnippets: () => Promise<
     { ok: true; imported: number; errors: string[] } | { ok: false; error: string }
   >;

@@ -43,6 +43,7 @@ export function registerEnterpriseIpc(): void {
       policyDisableAi: s['enterprisePolicyDisableAi'] === '1',
       policyDisableSync: s['enterprisePolicyDisableSync'] === '1',
       policyForcePrivate: s['enterprisePolicyForcePrivate'] === '1',
+      policySignatureValid: s['enterprisePolicySignatureValid'] === '1',
       auditRetentionDays: clampAuditRetentionDays(s['auditRetentionDays'] ?? '0'),
     };
   });
@@ -84,7 +85,7 @@ export function registerEnterpriseIpc(): void {
     appendAuditEvent({
       category: 'enterprise',
       action: 'policy_fetch',
-      detail: { ok: r.ok, error: r.ok ? undefined : r.error },
+      detail: { ok: r.ok, error: r.ok ? undefined : r.error, signatureValid: r.ok ? r.signatureValid : undefined },
     });
     return r;
   });

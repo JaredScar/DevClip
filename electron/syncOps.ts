@@ -164,7 +164,7 @@ export async function runSyncPush(passphrase: string): Promise<{ ok: true } | { 
     const remoteB64 = await httpGetText(url);
     if (remoteB64?.trim()) {
       try {
-        remotePlain = parseSyncBundleJson(decryptSyncEnvelope(remoteB64, pw));
+        remotePlain = parseSyncBundleJson(await decryptSyncEnvelope(remoteB64, pw));
       } catch (e) {
         const msg = e instanceof Error ? e.message : String(e);
         return { ok: false, error: `Remote blob exists but could not decrypt (wrong passphrase?): ${msg}` };
@@ -174,7 +174,7 @@ export async function runSyncPush(passphrase: string): Promise<{ ok: true } | { 
     applySyncBundleToDb(merged, vaultGetSessionKey());
     persistMergedDevicesJson(merged);
     const mergedJson = JSON.stringify(merged);
-    const enc = encryptSyncEnvelope(mergedJson, pw);
+    const enc = await encryptSyncEnvelope(mergedJson, pw);
     try {
       await httpPutText(url, enc);
     } catch (e) {
@@ -210,13 +210,13 @@ export async function runSyncPull(passphrase: string): Promise<{ ok: true } | { 
     if (!remoteB64) {
       return { ok: false, error: 'Nothing at remote URL (empty or 404).' };
     }
-    const remotePlain = parseSyncBundleJson(decryptSyncEnvelope(remoteB64, pw));
+    const remotePlain = parseSyncBundleJson(await decryptSyncEnvelope(remoteB64, pw));
     const localPlain = attachVaultToBundle(buildSyncBundleFromDb());
     const merged = mergeSyncBundles(localPlain, remotePlain);
     applySyncBundleToDb(merged, vaultGetSessionKey());
     persistMergedDevicesJson(merged);
     const mergedJson = JSON.stringify(merged);
-    const enc = encryptSyncEnvelope(mergedJson, pw);
+    const enc = await encryptSyncEnvelope(mergedJson, pw);
     try {
       await httpPutText(url, enc);
     } catch {
@@ -264,7 +264,7 @@ export async function exportSyncBackup(passphrase: string): Promise<{ ok: true; 
   }
   try {
     const plain = attachVaultToBundle(buildSyncBundleFromDb());
-    const enc = encryptSyncEnvelope(JSON.stringify(plain), pw);
+    const enc = await encryptSyncEnvelope(JSON.stringify(plain), pw);
     fs.writeFileSync(res.filePath, enc, 'utf8');
     return { ok: true, path: res.filePath };
   } catch (e) {
@@ -287,7 +287,7 @@ export async function importSyncBackup(passphrase: string): Promise<{ ok: true }
   }
   try {
     const enc = fs.readFileSync(res.filePaths[0], 'utf8');
-    const plain = parseSyncBundleJson(decryptSyncEnvelope(enc, pw));
+    const plain = parseSyncBundleJson(await decryptSyncEnvelope(enc, pw));
     const localPlain = attachVaultToBundle(buildSyncBundleFromDb());
     const merged = mergeSyncBundles(localPlain, plain);
     applySyncBundleToDb(merged, vaultGetSessionKey());

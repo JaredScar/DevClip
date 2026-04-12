@@ -45,7 +45,8 @@
   },
   "dependencies": {
     "better-sqlite3": "^11.7.0",
-    "electron-updater": "^6.8.3"
+    "electron-updater": "^6.8.3",
+    "libsodium-wrappers": "^0.8.3"
   },
   "build": {
     "appId": "app.devclip.desktop",
@@ -61,7 +62,14 @@
       "!**/*.map"
     ],
     "win": {
-      "target": [{ "target": "nsis", "arch": ["x64"] }],
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        }
+      ],
       "icon": "angular-app/public/devclip_icon_transparent.svg"
     },
     "nsis": {

@@ -387,8 +387,8 @@ Implementation checklist (same scope as the table):
 - [x] License validation client + local tier cache (`license` table — §9.1); optional HTTPS validate still TBD
 - [x] `FeatureFlagService` + Pro badge in nav; full route guards still TBD
 - [x] Sync client: E2E blob sync (AES-GCM, merge, outbox, UI) — `libsodium` / WebSocket to first-party server still optional
-- [ ] AI proxy or BYOK paths from renderer/main
-- [ ] Enterprise policy fetch, signature verify, local enforcement
+- [x] AI proxy or BYOK paths from renderer/main (OpenAI, Anthropic direct; hosted/OpenAI-compatible proxy configurable)
+- [x] Enterprise policy fetch, signature verify, local enforcement (HMAC-SHA256 signature verified via org API token)
 
 ### 8.3 License Server (Open Source)
 
@@ -481,8 +481,8 @@ CREATE TABLE IF NOT EXISTS collection_clips (
 Target mitigations vs repo today:
 
 - [x] **API keys** — license key in Electron **`safeStorage`** when the OS supports it (Keychain / DPAPI / etc.); optional `.license-key.plain` fallback — **not** stored in SQLite
-- [ ] **Sync payload** — XChaCha20-Poly1305 (or equivalent); keys only on device
-- [ ] **Vault** — separate AES-256-GCM (or equivalent); PIN / biometric unlock
+- [x] **Sync payload** — XChaCha20-Poly1305 (libsodium) with Argon2id key derivation; backward compatible with AES-256-GCM v1
+- [x] **Vault** — AES-256-GCM with scrypt key derivation; PIN unlock shipped; biometric unlock TBD
 - [x] **Context isolation** — Electron `contextIsolation: true`, `nodeIntegration: false`
 - [x] **CSP** — Content-Security-Policy applied via `session.defaultSession.webRequest` (tune as needed for dev vs prod)
 - [x] **Secret detection** — regex heuristics for common token patterns (`secret` clip type, etc.)
@@ -509,7 +509,7 @@ Target mitigations vs repo today:
 - [x] Import/export snippets
 - [x] Remaining text actions (hash, case, diff, JWT, timestamp, etc.)
 - [x] App password lock (PIN)
-- [ ] Auto-update via GitHub Releases
+- [x] Auto-update via GitHub Releases
 - [ ] macOS support
 - [x] Root **`LICENSE`** file (GNU **GPLv3**) at repository root (`package.json` declares `GPL-3.0-only`)
 - [ ] Public **GitHub** repository (publish + open visibility)

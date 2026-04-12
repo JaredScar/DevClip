@@ -16,6 +16,7 @@ type EntStatus = {
   policyDisableAi: boolean;
   policyDisableSync: boolean;
   policyForcePrivate: boolean;
+  policySignatureValid: boolean;
 };
 
 @Component({
@@ -133,6 +134,14 @@ type EntStatus = {
           <ul class="space-y-1 text-xs text-zinc-400 lite:text-zinc-600">
             <li>Last OK: {{ status()?.policyLastOk || '—' }}</li>
             <li>Last error: {{ status()?.policyLastError || '—' }}</li>
+            <li>
+              Signature valid:
+              @if (status()?.policySignatureValid) {
+                <span class="text-emerald-500">yes</span>
+              } @else {
+                <span class="text-amber-500">no / not signed</span>
+              }
+            </li>
             <li>AI disabled: {{ status()?.policyDisableAi ? 'yes' : 'no' }}</li>
             <li>Cloud sync disabled: {{ status()?.policyDisableSync ? 'yes' : 'no' }}</li>
             <li>Force private capture: {{ status()?.policyForcePrivate ? 'yes' : 'no' }}</li>
