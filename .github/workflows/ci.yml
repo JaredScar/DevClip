@@ -67,6 +67,13 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y icnsutils graphicsmagick
 
+      - name: Install system dependencies (macOS)
+        if: matrix.os == 'macos-latest'
+        run: |
+          brew update
+          # Needed by electron-builder/app-builder when converting icons (SVG->ICNS).
+          brew install icnsutils graphicsmagick librsvg
+
       - name: Install root dependencies
         run: npm ci
 
