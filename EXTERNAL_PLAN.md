@@ -25,10 +25,10 @@ These features require a hosted backend infrastructure operated by DevClip or se
 ---
 
 ### 2. In-Dashboard Analytics & Usage
-**Status:** Not implemented — requires hosted admin product
+**Status:** Partial — `DevClip-Cloud` provides analytics summary + Enterprise panel fetches and renders usage/seats (via `syncRemoteUrl`).
 
-- [ ] Real-time seat utilization dashboard
-- [ ] Usage analytics (clips created, sync frequency, AI usage)
+- [x] Real-time seat utilization dashboard (repo-scoped metrics + Enterprise panel UI)
+- [x] Usage analytics scaffolding (audit_events_7d + bundles_uploaded_7d)
 - [ ] Billing management UI
 - [ ] Invoice and payment history
 - [ ] Team member activity timeline
