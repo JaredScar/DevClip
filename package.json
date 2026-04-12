@@ -15,6 +15,15 @@
     "start": "cross-env DEVCLIP_DEV=0 electron .",
     "pack": "npm run build:all && electron-builder --dir",
     "dist": "npm run build:all && electron-builder",
+    "dist:win": "npm run build:all && electron-builder --win",
+    "dist:mac": "npm run build:all && electron-builder --mac",
+    "dist:linux": "npm run build:all && electron-builder --linux",
+    "dist:all": "npm run build:all && electron-builder --win --mac --linux",
+    "publish:win": "npm run build:all && electron-builder --win --publish always",
+    "publish:mac": "npm run build:all && electron-builder --mac --publish always",
+    "publish:linux": "npm run build:all && electron-builder --linux --publish always",
+    "publish:all": "npm run build:all && electron-builder --win --mac --linux --publish always",
+    "release:draft": "npm run build:all && electron-builder --publish onTagOrDraft",
     "postinstall": "electron-rebuild -f -w better-sqlite3"
   },
   "keywords": [
@@ -25,14 +34,20 @@
     "developer-tools",
     "productivity",
     "snippets",
-    "windows"
+    "windows",
+    "macos",
+    "linux",
+    "cross-platform",
+    "sync",
+    "encryption"
   ],
   "author": "DevClip contributors",
-  "license": "GPL-3.0-only",
+  "license": "AGPL-3.0",
   "engines": {
     "node": ">=20"
   },
   "devDependencies": {
+    "@electron/notarize": "^3.1.1",
     "@types/better-sqlite3": "^7.6.12",
     "@types/node": "^22.10.0",
     "concurrently": "^9.1.2",
@@ -48,13 +63,15 @@
     "electron-updater": "^6.8.3",
     "libsodium-wrappers": "^0.8.3"
   },
-  "build": {
+    "build": {
     "appId": "app.devclip.desktop",
     "productName": "DevClip",
     "copyright": "Copyright © 2024 DevClip contributors",
     "directories": {
-      "output": "release"
+      "output": "release",
+      "buildResources": "build"
     },
+    "afterSign": "scripts/notarize.js",
     "files": [
       "dist/**/*",
       "angular-app/dist/**/*",
@@ -76,6 +93,67 @@
       "oneClick": true,
       "perMachine": false,
       "allowToChangeInstallationDirectory": false
+    },
+    "mac": {
+      "target": [
+        {
+          "target": "dmg",
+          "arch": [
+            "x64",
+            "arm64"
+          ]
+        },
+        {
+          "target": "zip",
+          "arch": [
+            "x64",
+            "arm64"
+          ]
+        }
+      ],
+      "icon": "angular-app/public/devclip_icon_transparent.svg",
+      "category": "public.app-category.productivity",
+      " hardenedRuntime": true,
+      "gatekeeperAssess": false,
+      "entitlements": "build/entitlements.mac.plist",
+      "entitlementsInherit": "build/entitlements.mac.plist"
+    },
+    "dmg": {
+      "sign": false,
+      "contents": [
+        {
+          "x": 130,
+          "y": 220
+        },
+        {
+          "x": 410,
+          "y": 220,
+          "type": "link",
+          "path": "/Applications"
+        }
+      ]
+    },
+    "linux": {
+      "target": [
+        {
+          "target": "AppImage",
+          "arch": [
+            "x64"
+          ]
+        },
+        {
+          "target": "deb",
+          "arch": [
+            "x64"
+          ]
+        }
+      ],
+      "icon": "angular-app/public/devclip_icon_transparent.svg",
+      "category": "Utility",
+      "maintainer": "DevClip contributors",
+      "vendor": "DevClip",
+      "synopsis": "Developer-focused clipboard manager",
+      "description": "DevClip is an open-source clipboard manager with snippets, AI actions, and cloud sync support."
     },
     "publish": [
       {

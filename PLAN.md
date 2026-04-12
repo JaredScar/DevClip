@@ -303,7 +303,7 @@ Located at **Settings → License & Account** (all items below are UI + wiring t
 - [x] **On-prem license API** — private network / air-gapped network *for validation HTTP* when reachable
 - [x] **`/server` monorepo package** — Fastify `POST /api/v1/license/validate` (+ optional env extra keys)
 - [x] **Offline / air-gapped tier unlock** — `dc_pro_` / `dc_ent_` keys validated with **no network** (local + prefix rules)
-- [ ] **Signed** offline license *files* (JWT / HSM) with cryptographic expiry *(beyond prefix keys)*
+- [x] **Signed** offline license *files* (JWT / HSM) with cryptographic expiry — `server/src/utils/license.mjs` + `server/scripts/cli/license-cli.mjs`
 
 ### 6.5 Centralized Policy Management
 - [x] **Remote policy document** pulled from HTTPS URL (startup, 30 min interval, manual)
@@ -339,17 +339,18 @@ Located at **Settings → License & Account** (all items below are UI + wiring t
 
 ### 7.1 Current
 - [x] **Windows** — NSIS-style `.exe` via `electron-builder` (see `package.json` / builder config)
-- [ ] **macOS** — build, sign, notarize, distribute
-- [ ] **Linux** — build and distribute primary formats
+- [x] **macOS** — build, sign, notarize, distribute (`electron-builder` config + `build/entitlements.mac.plist` + `scripts/notarize.js`)
+- [x] **Linux** — build and distribute primary formats (`.AppImage`, `.deb` via `electron-builder`)
 
 ### 7.2 Distribution targets (per platform)
 - [x] Windows NSIS `.exe` (local `npm run dist` / CI)
-- [ ] Windows **WinGet** package manifest + publishing
-- [ ] macOS `.dmg` + **Homebrew Cask** (or equivalent)
-- [ ] Linux `.AppImage`
-- [ ] Linux `.deb` / `.rpm`
-- [ ] Linux **Snap**
-- [ ] Linux **AUR** (or community-maintained)
+- [x] Windows **WinGet** package manifest templates (`dist/winget/`)
+- [x] macOS `.dmg` + **Homebrew Cask** templates (`dist/homebrew/`)
+- [x] Linux `.AppImage` — `electron-builder` target configured
+- [x] Linux `.deb` — `electron-builder` target configured
+- [ ] Linux `.rpm` — pending demand
+- [ ] Linux **Snap** — pending demand + snapcraft store account
+- [ ] Linux **AUR** — community-maintained
 
 ### 7.3 Auto-Update
 - [x] `electron-updater` wired to **GitHub Releases** (or chosen update server)
@@ -397,8 +398,8 @@ Lightweight Node.js (Fastify) service under `/server`. **Repo state:** license v
 - [x] Create `/server` package (Fastify app, env config)
 - [x] `POST /api/v1/license/validate` (prefix keys `dc_pro_` / `dc_ent_` + optional `DEVCLIP_EXTRA_*_KEYS`)
 - [ ] WebSocket sync endpoint + auth
-- [ ] Postgres schema + queries
-- [ ] Key generation / verification helpers
+- [x] Postgres schema + queries (`server/database/schema.sql`)
+- [x] Key generation / verification helpers (`server/src/utils/license.mjs` — RSA key gen, JWT sign/verify)
 - [x] `Dockerfile` + repo-root `docker-compose.yml` (service `devclip-license`)
 - [x] CI build/test for server (syntax check via `node --check`)
 
@@ -469,10 +470,10 @@ CREATE TABLE IF NOT EXISTS collection_clips (
 
 ### 9.2 Sync Server (Pro/Enterprise) — PostgreSQL
 
-- [ ] Postgres schema + migrations for multi-tenant sync
-- [ ] Core entities: `users`, `organizations`, `org_members`, `api_keys`
-- [ ] Encrypted blobs: `encrypted_clips`, `encrypted_snippets`, `encrypted_settings`
-- [ ] `sync_cursors`, `audit_log`, `policies`
+- [x] Postgres schema + migrations for multi-tenant sync (`server/database/schema.sql`)
+- [x] Core entities: `users`, `organizations`, `org_members`, `api_keys`
+- [x] Encrypted blobs: `encrypted_clips`, `encrypted_snippets`, `encrypted_settings`
+- [x] `sync_cursors`, `audit_log`, `policies` — with HMAC integrity signing (`server/src/utils/audit.mjs`)
 
 ---
 
@@ -486,7 +487,7 @@ Target mitigations vs repo today:
 - [x] **Context isolation** — Electron `contextIsolation: true`, `nodeIntegration: false`
 - [x] **CSP** — Content-Security-Policy applied via `session.defaultSession.webRequest` (tune as needed for dev vs prod)
 - [x] **Secret detection** — regex heuristics for common token patterns (`secret` clip type, etc.)
-- [ ] **Audit log integrity** — HMAC-signed entries (server-side; §6.6)
+- [x] **Audit log integrity** — HMAC-signed entries (server-side; `server/src/utils/audit.mjs`)
 
 ---
 
@@ -510,8 +511,8 @@ Target mitigations vs repo today:
 - [x] Remaining text actions (hash, case, diff, JWT, timestamp, etc.)
 - [x] App password lock (PIN)
 - [x] Auto-update via GitHub Releases
-- [ ] macOS support
-- [x] Root **`LICENSE`** file (GNU **GPLv3**) at repository root (`package.json` declares `GPL-3.0-only`)
+- [x] macOS support (code signing, notarization, `.dmg`, `.zip`)
+- [x] Root **`LICENSE`** file (GNU **GPLv3**) at repository root (`package.json` declares `AGPL-3.0`)
 - [ ] Public **GitHub** repository (publish + open visibility)
 
 ### v1.1 — Pro Tier
@@ -588,7 +589,7 @@ devclip/
 - [x] `SECURITY.md`
 - [x] `.github/ISSUE_TEMPLATE/` (bug + feature templates)
 - [x] `.github/PULL_REQUEST_TEMPLATE.md`
-- [x] `.github/workflows/` — CI runs `npm ci` + `npm run build:all` on Windows (lint/test matrix still optional)
+- [x] `.github/workflows/` — CI runs `npm ci` + `npm run build:all` on Windows, macOS, Linux matrix; lint, type-check, server validation, security audit
 
 ### Community
 - GitHub Issues for bug reports and feature requests
@@ -605,4 +606,4 @@ Rough counts in this file: **~148** rows marked **`[x]`** and **~93** still **`[
 
 ---
 
-*Last updated: March 30, 2026*
+*Last updated: April 12, 2026*

@@ -1,0 +1,374 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v[0-9]+.[0-9]+.[0-9]+*'
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version to release (e.g., 1.0.0)'
+        required: true
+        type: string
+
+env:
+  NODE_VERSION: '22'
+
+jobs:
+  # Version check and validation
+  version:
+    name: Validate Version
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Determine version
+        id: version
+        run: |
+          if [ "${{ github.event.inputs.version }}" != "" ]; then
+            VERSION="${{ github.event.inputs.version }}"
+          else
+            VERSION=${GITHUB_REF#refs/tags/v}
+          fi
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "Release version: $VERSION"
+
+  # Build for Windows
+  build-windows:
+    name: Build Windows
+    needs: version
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+          cache-dependency-path: package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install Angular dependencies
+        working-directory: angular-app
+        run: npm ci
+
+      - name: Build application
+        run: npm run build:all
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Package for Windows
+        run: npx electron-builder --win --publish never
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Upload Windows artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: windows-artifacts
+          path: |
+            release/DevClip Setup *.exe
+            release/*.yml
+            release/*.yaml
+
+  # Build for macOS
+  build-macos:
+    name: Build macOS
+    needs: version
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+          cache-dependency-path: package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install Angular dependencies
+        working-directory: angular-app
+        run: npm ci
+
+      - name: Build application
+        run: npm run build:all
+
+      - name: Package for macOS
+        run: npx electron-builder --mac --publish never
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          APPLE_ID: ${{ secrets.APPLE_ID }}
+          APPLE_PASSWORD: ${{ secrets.APPLE_PASSWORD }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+          CSC_LINK: ${{ secrets.CSC_LINK }}
+          CSC_KEY_PASSWORD: ${{ secrets.CSC_KEY_PASSWORD }}
+
+      - name: Upload macOS artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: macos-artifacts
+          path: |
+            release/DevClip-*.dmg
+            release/DevClip-*.zip
+            release/*.yml
+            release/*.yaml
+
+  # Build for Linux
+  build-linux:
+    name: Build Linux
+    needs: version
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+          cache-dependency-path: package-lock.json
+
+      - name: Install system dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y snapd
+          sudo snap install snapcraft --classic
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install Angular dependencies
+        working-directory: angular-app
+        run: npm ci
+
+      - name: Build application
+        run: npm run build:all
+
+      - name: Package for Linux
+        run: npx electron-builder --linux --publish never
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Upload Linux artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: linux-artifacts
+          path: |
+            release/*.AppImage
+            release/*.deb
+            release/*.yml
+            release/*.yaml
+
+  # Create GitHub Release and upload all artifacts
+  release:
+    name: Create Release
+    needs: [version, build-windows, build-macos, build-linux]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+          merge-multiple: false
+
+      - name: List artifacts
+        run: |
+          echo "Windows artifacts:"
+          ls -la artifacts/windows-artifacts/ || echo "No Windows artifacts"
+          echo "macOS artifacts:"
+          ls -la artifacts/macos-artifacts/ || echo "No macOS artifacts"
+          echo "Linux artifacts:"
+          ls -la artifacts/linux-artifacts/ || echo "No Linux artifacts"
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v2
+        with:
+          name: DevClip v${{ needs.version.outputs.version }}
+          draft: true
+          prerelease: ${{ contains(needs.version.outputs.version, '-') }}
+          generate_release_notes: true
+          files: |
+            artifacts/windows-artifacts/**
+            artifacts/macos-artifacts/**
+            artifacts/linux-artifacts/**
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  # Generate package manifests (WinGet, Homebrew, etc.)
+  manifests:
+    name: Generate Package Manifests
+    needs: [version, release]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Download artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+          merge-multiple: true
+
+      - name: Compute checksums
+        id: checksums
+        run: |
+          VERSION="${{ needs.version.outputs.version }}"
+          
+          # Windows
+          WINDOWS_EXE=$(find artifacts -name "*Setup*${VERSION}*.exe" | head -1)
+          if [ -f "$WINDOWS_EXE" ]; then
+            WINDOWS_SHA256=$(sha256sum "$WINDOWS_EXE" | cut -d' ' -f1)
+            echo "windows_sha256=$WINDOWS_SHA256" >> $GITHUB_OUTPUT
+            echo "windows_file=$(basename "$WINDOWS_EXE")" >> $GITHUB_OUTPUT
+          fi
+
+          # macOS ARM64
+          MACOS_ARM_DMG=$(find artifacts -name "*${VERSION}*arm64*.dmg" | head -1)
+          if [ -f "$MACOS_ARM_DMG" ]; then
+            MACOS_ARM_SHA256=$(sha256sum "$MACOS_ARM_DMG" | cut -d' ' -f1)
+            echo "macos_arm_sha256=$MACOS_ARM_SHA256" >> $GITHUB_OUTPUT
+            echo "macos_arm_file=$(basename "$MACOS_ARM_DMG")" >> $GITHUB_OUTPUT
+          fi
+
+          # macOS x64
+          MACOS_X64_DMG=$(find artifacts -name "*${VERSION}*x64*.dmg" | head -1)
+          if [ -f "$MACOS_X64_DMG" ]; then
+            MACOS_X64_SHA256=$(sha256sum "$MACOS_X64_DMG" | cut -d' ' -f1)
+            echo "macos_x64_sha256=$MACOS_X64_SHA256" >> $GITHUB_OUTPUT
+            echo "macos_x64_file=$(basename "$MACOS_X64_DMG")" >> $GITHUB_OUTPUT
+          fi
+
+          # Linux AppImage
+          APPIMAGE=$(find artifacts -name "*.AppImage" | head -1)
+          if [ -f "$APPIMAGE" ]; then
+            APPIMAGE_SHA256=$(sha256sum "$APPIMAGE" | cut -d' ' -f1)
+            echo "appimage_sha256=$APPIMAGE_SHA256" >> $GITHUB_OUTPUT
+            echo "appimage_file=$(basename "$APPIMAGE")" >> $GITHUB_OUTPUT
+          fi
+
+          # Linux deb
+          DEB=$(find artifacts -name "*.deb" | head -1)
+          if [ -f "$DEB" ]; then
+            DEB_SHA256=$(sha256sum "$DEB" | cut -d' ' -f1)
+            echo "deb_sha256=$DEB_SHA256" >> $GITHUB_OUTPUT
+            echo "deb_file=$(basename "$DEB")" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Generate WinGet manifest
+        run: |
+          mkdir -p manifests/winget
+          cat > manifests/winget/DevClip.DevClip.installer.yaml << 'EOF'
+          # yaml-language-server: $schema=https://aka.ms/winget-manifest.installer.1.6.0.schema.json
+          PackageIdentifier: DevClip.DevClip
+          PackageVersion: ${{ needs.version.outputs.version }}
+          InstallerType: nullsoft
+          Scope: user
+          InstallModes:
+            - silent
+          UpgradeBehavior: install
+          Installers:
+            - Architecture: x64
+              InstallerUrl: https://github.com/devclip/devclip/releases/download/v${{ needs.version.outputs.version }}/${{ steps.checksums.outputs.windows_file }}
+              InstallerSha256: ${{ steps.checksums.outputs.windows_sha256 }}
+          ManifestType: installer
+          ManifestVersion: 1.6.0
+          EOF
+          
+          cp dist/winget/DevClip.DevClip.locale.en-US.yaml manifests/winget/
+          cp dist/winget/DevClip.DevClip.yaml manifests/winget/
+          
+          sed -i "s/#{version}/${{ needs.version.outputs.version }}/g" manifests/winget/*.yaml
+
+      - name: Generate Homebrew Cask
+        run: |
+          mkdir -p manifests/homebrew
+          cat > manifests/homebrew/devclip.rb << 'EOF'
+          cask "devclip" do
+            arch arm: "arm64", intel: "x64"
+
+            version "${{ needs.version.outputs.version }}"
+            
+            on_arm do
+              sha256 "${{ steps.checksums.outputs.macos_arm_sha256 }}"
+              url "https://github.com/devclip/devclip/releases/download/v#{version}/${{ steps.checksums.outputs.macos_arm_file }}"
+            end
+            on_intel do
+              sha256 "${{ steps.checksums.outputs.macos_x64_sha256 }}"
+              url "https://github.com/devclip/devclip/releases/download/v#{version}/${{ steps.checksums.outputs.macos_x64_file }}"
+            end
+
+            name "DevClip"
+            desc "Developer-focused clipboard manager with snippets and sync"
+            homepage "https://github.com/devclip/devclip"
+
+            livecheck do
+              url :url
+              regex(/^v?(\d+(?:\.\d+)+)$/i)
+            end
+
+            auto_updates true
+
+            app "DevClip.app"
+
+            zap trash: [
+              "~/Library/Application Support/DevClip",
+              "~/Library/Caches/app.devclip.desktop",
+              "~/Library/Preferences/app.devclip.desktop.plist",
+              "~/Library/Saved Application State/app.devclip.desktop.savedState",
+            ]
+          end
+          EOF
+
+      - name: Upload manifests
+        uses: actions/upload-artifact@v4
+        with:
+          name: package-manifests
+          path: manifests/
+
+  # Publish to package managers (optional, requires additional secrets)
+  publish-winget:
+    name: Publish to WinGet
+    needs: [version, manifests]
+    runs-on: windows-latest
+    if: github.repository == 'devclip/devclip' && !contains(needs.version.outputs.version, '-')
+    steps:
+      - name: Download manifests
+        uses: actions/download-artifact@v4
+        with:
+          name: package-manifests
+          path: manifests
+
+      # Uncomment when ready to publish to WinGet Community Repo
+      # - name: Submit to WinGet
+      #   uses: microsoft/winget-create@v1
+      #   with:
+      #     manifests: manifests/winget/*.yaml
+      #     token: ${{ secrets.WINGET_TOKEN }}
+
+  publish-homebrew:
+    name: Publish to Homebrew
+    needs: [version, manifests]
+    runs-on: ubuntu-latest
+    if: github.repository == 'devclip/devclip' && !contains(needs.version.outputs.version, '-')
+    steps:
+      - name: Download manifests
+        uses: actions/download-artifact@v4
+        with:
+          name: package-manifests
+          path: manifests
+
+      # Uncomment when ready to publish to homebrew-cask
+      # - name: Submit to Homebrew
+      #   uses: dawidd6/action-homebrew-bump-formula@v3
+      #   with:
+      #     token: ${{ secrets.HOMEBREW_TOKEN }}
+      #     formula: devclip
+      #     tag: v${{ needs.version.outputs.version }}
