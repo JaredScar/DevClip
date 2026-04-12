@@ -4,6 +4,7 @@ angular-app/dist/
 angular-app/.angular/
 server/node_modules/
 release/
+release-assets/
 *.log
 .DS_Store
 Thumbs.db
