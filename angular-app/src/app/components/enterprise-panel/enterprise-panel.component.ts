@@ -249,6 +249,38 @@ type CloudAnalytics = {
           </div>
         </section>
 
+        <!-- Billing and team activity (scaffold) -->
+        <section class="rounded-xl border border-white/10 bg-[#1a1a1a] p-4 lite:border-zinc-200 lite:bg-white">
+          <h3 class="mb-2 text-[10px] font-bold uppercase tracking-wider text-zinc-500 lite:text-zinc-600">
+            Billing & Team Activity
+          </h3>
+          <p class="mb-3 text-xs text-zinc-500 lite:text-zinc-600">
+            Enterprise billing snapshot and team activity are scaffolded for the hosted admin product.
+          </p>
+
+          <div class="mb-3 grid gap-2 sm:grid-cols-2">
+            <div class="rounded border border-white/5 bg-black/20 p-2 lite:border-zinc-200 lite:bg-zinc-50">
+              <div class="text-[10px] uppercase text-zinc-500">Plan</div>
+              <div class="text-lg font-semibold text-emerald-400">Enterprise</div>
+              <div class="text-[10px] text-zinc-500">Renews automatically</div>
+            </div>
+            <div class="rounded border border-white/5 bg-black/20 p-2 lite:border-zinc-200 lite:bg-zinc-50">
+              <div class="text-[10px] uppercase text-zinc-500">Seats</div>
+              <div class="text-lg font-semibold text-emerald-400">—</div>
+              <div class="text-[10px] text-zinc-500">Billing sync pending</div>
+            </div>
+          </div>
+
+          <div class="rounded border border-white/5 bg-black/20 p-3 lite:border-zinc-200 lite:bg-zinc-50">
+            <div class="mb-2 text-xs text-zinc-300 lite:text-zinc-700">
+              <strong>Recent team activity</strong>
+            </div>
+            <p class="text-[12px] text-zinc-500 lite:text-zinc-600">
+              Scaffolding only: wire into `DevClip-Cloud` team activity endpoint.
+            </p>
+          </div>
+        </section>
+
         <!-- SLA / Status Page -->
         <section class="rounded-xl border border-white/10 bg-[#1a1a1a] p-4 lite:border-zinc-200 lite:bg-white">
           <h3 class="mb-2 text-[10px] font-bold uppercase tracking-wider text-zinc-500 lite:text-zinc-600">
