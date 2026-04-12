@@ -72,7 +72,7 @@ jobs:
         run: |
           brew update
           # Needed by electron-builder/app-builder when converting icons (SVG->ICNS).
-          brew install icnsutils graphicsmagick librsvg
+          brew install icoutils graphicsmagick librsvg
 
       - name: Install root dependencies
         run: npm ci
