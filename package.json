@@ -44,6 +44,38 @@
     "wait-on": "^8.0.1"
   },
   "dependencies": {
-    "better-sqlite3": "^11.7.0"
+    "better-sqlite3": "^11.7.0",
+    "electron-updater": "^6.8.3"
+  },
+  "build": {
+    "appId": "app.devclip.desktop",
+    "productName": "DevClip",
+    "copyright": "Copyright © 2024 DevClip contributors",
+    "directories": {
+      "output": "release"
+    },
+    "files": [
+      "dist/**/*",
+      "angular-app/dist/**/*",
+      "database/schema.sql",
+      "!**/*.map"
+    ],
+    "win": {
+      "target": [{ "target": "nsis", "arch": ["x64"] }],
+      "icon": "angular-app/public/devclip_icon_transparent.svg"
+    },
+    "nsis": {
+      "oneClick": true,
+      "perMachine": false,
+      "allowToChangeInstallationDirectory": false
+    },
+    "publish": [
+      {
+        "provider": "github",
+        "owner": "devclip",
+        "repo": "devclip",
+        "releaseType": "release"
+      }
+    ]
   }
 }

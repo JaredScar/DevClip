@@ -2,6 +2,7 @@ import { createHash } from 'crypto';
 import { existsSync } from 'fs';
 import { app, BrowserWindow, clipboard, dialog, globalShortcut, screen, session } from 'electron';
 import * as path from 'path';
+import { setupAutoUpdater, checkForUpdatesOnStartup } from './autoUpdater';
 import { getSourceLabelSync } from './sourceApp';
 import { tryAddClipToSmartCollections } from '../database/collections';
 import { appendAuditEvent, clampAuditRetentionDays, pruneAuditEventsRetentionDays } from '../database/audit';
@@ -493,6 +494,11 @@ app.whenReady().then(() => {
   syncLaunchAtLogin();
   createMainWindow();
   overlayWindow = createOverlayWindow();
+
+  setupAutoUpdater(getMainWindow);
+  if (!isDev) {
+    void checkForUpdatesOnStartup();
+  }
 
   app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) {

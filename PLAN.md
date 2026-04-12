@@ -245,7 +245,7 @@ Located at **Settings → License & Account** (all items below are UI + wiring t
 
 ### 5.7 Vault (Sensitive Items)
 - [x] Encrypted local vault for sensitive clips
-- [ ] Optional sync of vault contents (explicit opt-in)
+- [x] Optional sync of vault contents (explicit opt-in; requires vault unlocked at sync time)
 - [x] Separate PIN / biometric lock for vault (vault PIN shipped; biometric TBD)
 - [x] Auto-move secret-type clips to vault (opt-in)
 - [x] Hooks for future password-manager integration (provider registry stub + IPC)
@@ -352,9 +352,9 @@ Located at **Settings → License & Account** (all items below are UI + wiring t
 - [ ] Linux **AUR** (or community-maintained)
 
 ### 7.3 Auto-Update
-- [ ] `electron-updater` wired to **GitHub Releases** (or chosen update server)
-- [ ] Background update check on launch
-- [ ] User prompt to download / install when ready
+- [x] `electron-updater` wired to **GitHub Releases** (or chosen update server)
+- [x] Background update check on launch
+- [x] User prompt to download / install when ready (in Settings → About & Updates)
 - [ ] Release channels: Stable / Beta / Nightly
 
 ---
@@ -400,7 +400,7 @@ Lightweight Node.js (Fastify) service under `/server`. **Repo state:** license v
 - [ ] Postgres schema + queries
 - [ ] Key generation / verification helpers
 - [x] `Dockerfile` + repo-root `docker-compose.yml` (service `devclip-license`)
-- [ ] CI build/test for server
+- [x] CI build/test for server (syntax check via `node --check`)
 
 Layout target:
 

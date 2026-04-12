@@ -740,4 +740,6 @@ export function registerIpcHandlers(
     void processSyncOutbox();
     return { ok: true as const };
   });
+
+  ipcMain.handle('app:getVersion', () => app.getVersion());
 }

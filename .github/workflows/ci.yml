@@ -24,3 +24,21 @@ jobs:
         run: npm ci
       - name: Build Electron + Angular
         run: npm run build:all
+
+  server:
+    name: Server build check
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: server
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: server/package-lock.json
+      - name: Install server dependencies
+        run: npm ci
+      - name: Syntax check server entry point
+        run: node --input-type=module --check < src/index.mjs

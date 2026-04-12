@@ -23,6 +23,7 @@ interface SyncCategories {
   collections: boolean;
   automation: boolean;
   settings: boolean;
+  vault: boolean;
   clipTypesAll: boolean;
   clipTypes: string[];
 }
@@ -248,6 +249,7 @@ export class SyncPanelComponent implements OnInit, OnDestroy {
     { key: 'collections', label: 'Collections' },
     { key: 'automation', label: 'Automation rules' },
     { key: 'settings', label: 'Settings (safe subset)' },
+    { key: 'vault', label: 'Vault entries (requires vault unlocked at sync time)' },
   ];
 
   readonly status = signal<Awaited<ReturnType<typeof window.devclip.syncGetStatus>> | null>(null);
@@ -261,6 +263,7 @@ export class SyncPanelComponent implements OnInit, OnDestroy {
     collections: true,
     automation: true,
     settings: true,
+    vault: false,
     clipTypesAll: true,
     clipTypes: [],
   });
@@ -293,6 +296,7 @@ export class SyncPanelComponent implements OnInit, OnDestroy {
           collections: c.collections !== false,
           automation: c.automation !== false,
           settings: c.settings !== false,
+          vault: c.vault === true,
           clipTypesAll: c.clipTypesAll !== false,
           clipTypes: Array.isArray(c.clipTypes) ? c.clipTypes.map(String) : [],
         });
@@ -325,6 +329,10 @@ export class SyncPanelComponent implements OnInit, OnDestroy {
     if (key === 'clipTypesAll' || key === 'clipTypes') return;
     this.categories.update((c) => ({ ...c, [key]: checked }));
     this.persistCategories();
+  }
+
+  isVaultRow(key: keyof SyncCategories): boolean {
+    return key === 'vault';
   }
 
   toggleClipTypesAll(v: boolean): void {

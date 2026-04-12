@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, OnInit, inject } from '@angular/core';
+import { Component, OnDestroy, OnInit, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import type { ThemeSetting } from '../../services/theme.service';
 import { ThemeService } from '../../services/theme.service';
@@ -450,6 +450,58 @@ import { FeatureFlagService } from '../../services/feature-flag.service';
         </section>
       }
 
+      <section class="rounded-lg border border-white/10 p-3 lite:border-zinc-200">
+        <h3 class="mb-2 text-xs font-bold uppercase tracking-wide text-zinc-500 lite:text-zinc-600">
+          About &amp; Updates
+        </h3>
+        <p class="mb-2 text-xs text-zinc-500 lite:text-zinc-600">
+          DevClip v{{ appVersion }} &mdash; Automatically checks for new versions on startup.
+        </p>
+        <div class="mb-2 flex flex-wrap gap-2">
+          <button
+            type="button"
+            class="rounded-lg bg-devclip-accent px-3 py-1.5 text-xs font-semibold text-black disabled:opacity-50"
+            [disabled]="updaterPhase === 'checking' || updaterPhase === 'downloading'"
+            (click)="checkForUpdates()"
+          >
+            Check for updates
+          </button>
+          @if (updaterPhase === 'downloaded') {
+            <button
+              type="button"
+              class="rounded-lg bg-emerald-600 px-3 py-1.5 text-xs font-semibold text-white"
+              (click)="installUpdate()"
+            >
+              Restart &amp; install
+            </button>
+          }
+          @if (updaterPhase === 'available') {
+            <button
+              type="button"
+              class="rounded-lg border border-devclip-accent px-3 py-1.5 text-xs font-semibold text-devclip-accent"
+              (click)="downloadUpdate()"
+            >
+              Download v{{ updaterVersion }}
+            </button>
+          }
+        </div>
+        @if (updaterPhase === 'checking') {
+          <p class="text-xs text-zinc-500 lite:text-zinc-600">Checking for updates&hellip;</p>
+        }
+        @if (updaterPhase === 'downloading') {
+          <p class="text-xs text-zinc-500 lite:text-zinc-600">Downloading&hellip; {{ updaterPercent }}%</p>
+        }
+        @if (updaterPhase === 'downloaded') {
+          <p class="text-xs text-emerald-400 lite:text-emerald-700">v{{ updaterVersion }} downloaded — restart to apply.</p>
+        }
+        @if (updaterPhase === 'not-available') {
+          <p class="text-xs text-zinc-500 lite:text-zinc-600">You are on the latest version (v{{ updaterVersion }}).</p>
+        }
+        @if (updaterPhase === 'error') {
+          <p class="text-xs text-red-400 lite:text-red-700">Update error: {{ updaterError }}</p>
+        }
+      </section>
+
       <p class="text-[10px] text-zinc-600 lite:text-zinc-500">
         Shortcut, poll interval, overlay position, and launch-at-login apply within a few seconds in the main
         process.
@@ -457,7 +509,7 @@ import { FeatureFlagService } from '../../services/feature-flag.service';
     </div>
   `,
 })
-export class SettingsPanelComponent implements OnInit {
+export class SettingsPanelComponent implements OnInit, OnDestroy {
   private readonly themeSvc = inject(ThemeService);
   readonly flags = inject(FeatureFlagService);
 
@@ -508,6 +560,13 @@ export class SettingsPanelComponent implements OnInit {
   aiKeyHostedInput = '';
   aiKeyMessage = '';
 
+  appVersion = '1.0.0';
+  updaterPhase: string = 'idle';
+  updaterVersion = '';
+  updaterPercent = 0;
+  updaterError = '';
+  private updaterUnsub: (() => void) | null = null;
+
   get proHistoryCapDisplay(): string {
     const n = this.proHistoryCapInput;
     if (!Number.isFinite(n) || n <= 0) return 'default (~2M)';
@@ -548,6 +607,66 @@ export class SettingsPanelComponent implements OnInit {
     await this.themeSvc.hydrateFromSettings();
     await this.flags.refresh();
     await this.hydrateLicenseDisplay();
+    void this.hydrateUpdaterStatus();
+    try {
+      this.appVersion = await window.devclip.getAppVersion();
+    } catch {
+      // dev mode
+    }
+    this.updaterUnsub = window.devclip.onUpdaterStatus((s) => {
+      this.applyUpdaterStatus(s);
+    });
+  }
+
+  ngOnDestroy(): void {
+    this.updaterUnsub?.();
+    this.updaterUnsub = null;
+  }
+
+  private applyUpdaterStatus(s: Record<string, unknown>): void {
+    this.updaterPhase = String(s['phase'] ?? 'idle');
+    if (s['version']) this.updaterVersion = String(s['version']);
+    if (typeof s['percent'] === 'number') this.updaterPercent = s['percent'] as number;
+    if (s['message']) this.updaterError = String(s['message']);
+  }
+
+  async hydrateUpdaterStatus(): Promise<void> {
+    try {
+      const s = await window.devclip.updaterGetStatus();
+      this.applyUpdaterStatus(s);
+    } catch {
+      // updater not wired in dev
+    }
+  }
+
+  async checkForUpdates(): Promise<void> {
+    this.updaterPhase = 'checking';
+    this.updaterError = '';
+    try {
+      await window.devclip.updaterCheck();
+    } catch (e) {
+      this.updaterPhase = 'error';
+      this.updaterError = String((e as Error)?.message ?? e);
+    }
+  }
+
+  async downloadUpdate(): Promise<void> {
+    this.updaterPhase = 'downloading';
+    this.updaterPercent = 0;
+    try {
+      await window.devclip.updaterDownload();
+    } catch (e) {
+      this.updaterPhase = 'error';
+      this.updaterError = String((e as Error)?.message ?? e);
+    }
+  }
+
+  async installUpdate(): Promise<void> {
+    try {
+      await window.devclip.updaterInstall();
+    } catch {
+      // app is restarting
+    }
   }
 
   async hydrateLicenseDisplay(): Promise<void> {

@@ -246,6 +246,20 @@ const api = {
     ipcRenderer.invoke('audit:exportCsv') as Promise<
       { ok: true; path: string } | { ok: false; error: string }
     >,
+  getAppVersion: () => ipcRenderer.invoke('app:getVersion') as Promise<string>,
+  updaterCheck: () =>
+    ipcRenderer.invoke('updater:check') as Promise<{ ok: boolean; error?: string }>,
+  updaterDownload: () =>
+    ipcRenderer.invoke('updater:download') as Promise<{ ok: boolean; error?: string }>,
+  updaterInstall: () =>
+    ipcRenderer.invoke('updater:install') as Promise<{ ok: boolean }>,
+  updaterGetStatus: () =>
+    ipcRenderer.invoke('updater:getStatus') as Promise<Record<string, unknown>>,
+  onUpdaterStatus: (callback: (status: Record<string, unknown>) => void) => {
+    const handler = (_event: IpcRendererEvent, status: Record<string, unknown>) => callback(status);
+    ipcRenderer.on('updater:status', handler);
+    return () => ipcRenderer.removeListener('updater:status', handler);
+  },
 };
 
 contextBridge.exposeInMainWorld('devclip', api);

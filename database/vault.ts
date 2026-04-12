@@ -3,6 +3,7 @@ import {
   createDecipheriv,
   createHash,
   randomBytes,
+  randomUUID,
   scryptSync,
   timingSafeEqual,
 } from 'crypto';
@@ -72,6 +73,14 @@ export function decryptVaultBlob(key: Buffer, blob: Buffer): string {
   return Buffer.concat([decipher.update(data), decipher.final()]).toString('utf8');
 }
 
+export interface VaultSyncEntry {
+  sync_uid: string;
+  created_at: number;
+  type: string;
+  title_hint: string;
+  payload: VaultPayload;
+}
+
 export function insertVaultEntry(
   key: Buffer,
   input: { type: string; title_hint: string; payload: VaultPayload }
@@ -79,10 +88,53 @@ export function insertVaultEntry(
   const db = getDb();
   const json = JSON.stringify(input.payload);
   const ct = encryptVaultBlob(key, json);
+  const uid = randomUUID();
   const r = db
-    .prepare(`INSERT INTO vault_entries (type, title_hint, ciphertext) VALUES (?, ?, ?)`)
-    .run(input.type, input.title_hint, ct);
+    .prepare(`INSERT INTO vault_entries (type, title_hint, ciphertext, sync_uid) VALUES (?, ?, ?, ?)`)
+    .run(input.type, input.title_hint, ct, uid);
   return Number(r.lastInsertRowid);
+}
+
+/** Returns all vault entries decrypted as sync-ready objects. Requires the session key. */
+export function exportVaultEntriesForSync(key: Buffer): VaultSyncEntry[] {
+  const db = getDb();
+  const rows = db
+    .prepare(`SELECT id, created_at, type, title_hint, ciphertext, sync_uid FROM vault_entries ORDER BY created_at ASC`)
+    .all() as { id: number; created_at: number; type: string; title_hint: string; ciphertext: Buffer; sync_uid: string | null }[];
+
+  const result: VaultSyncEntry[] = [];
+  for (const row of rows) {
+    try {
+      const json = decryptVaultBlob(key, Buffer.from(row.ciphertext));
+      const payload = JSON.parse(json) as VaultPayload;
+      let uid = row.sync_uid?.trim();
+      if (!uid) {
+        uid = randomUUID();
+        db.prepare(`UPDATE vault_entries SET sync_uid = ? WHERE id = ?`).run(uid, row.id);
+      }
+      result.push({ sync_uid: uid, created_at: row.created_at, type: row.type, title_hint: row.title_hint, payload });
+    } catch {
+      // skip entries we can't decrypt (shouldn't happen if key is correct)
+    }
+  }
+  return result;
+}
+
+/** Upserts a vault entry from a sync bundle; no-ops if sync_uid already exists. */
+export function upsertVaultEntryFromSync(
+  key: Buffer,
+  entry: VaultSyncEntry
+): void {
+  const db = getDb();
+  const existing = db
+    .prepare(`SELECT id FROM vault_entries WHERE sync_uid = ?`)
+    .get(entry.sync_uid) as { id: number } | undefined;
+  if (existing) return;
+  const json = JSON.stringify(entry.payload);
+  const ct = encryptVaultBlob(key, json);
+  db.prepare(
+    `INSERT INTO vault_entries (type, title_hint, ciphertext, sync_uid, created_at) VALUES (?, ?, ?, ?, ?)`
+  ).run(entry.type, entry.title_hint, ct, entry.sync_uid, entry.created_at);
 }
 
 export function listVaultEntryMeta(): VaultEntryMeta[] {

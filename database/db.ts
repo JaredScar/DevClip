@@ -117,6 +117,13 @@ function migrate(db: Database.Database): void {
       );
     }
   }
+  const vaultCols = db.prepare('PRAGMA table_info(vault_entries)').all() as { name: string }[];
+  if (vaultCols.length > 0) {
+    const vaultNames = new Set(vaultCols.map((c) => c.name));
+    if (!vaultNames.has('sync_uid')) {
+      db.exec(`ALTER TABLE vault_entries ADD COLUMN sync_uid TEXT`);
+    }
+  }
 }
 
 export function initDatabase(userDataPath: string): void {

@@ -259,6 +259,12 @@ export interface DevClipApi {
   >;
   auditExportJsonl: () => Promise<{ ok: true; path: string } | { ok: false; error: string }>;
   auditExportCsv: () => Promise<{ ok: true; path: string } | { ok: false; error: string }>;
+  getAppVersion: () => Promise<string>;
+  updaterCheck: () => Promise<{ ok: boolean; error?: string }>;
+  updaterDownload: () => Promise<{ ok: boolean; error?: string }>;
+  updaterInstall: () => Promise<{ ok: boolean }>;
+  updaterGetStatus: () => Promise<Record<string, unknown>>;
+  onUpdaterStatus: (callback: (status: Record<string, unknown>) => void) => () => void;
 }
 
 declare global {

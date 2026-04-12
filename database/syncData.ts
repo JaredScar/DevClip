@@ -20,6 +20,7 @@ import {
   upsertCollectionFromSync,
 } from './collections';
 import { getAllSnippetsForSync, upsertSnippetFromSync } from './snippets';
+import { upsertVaultEntryFromSync } from './vault';
 
 export const SYNC_SETTING_KEYS = new Set([
   'theme',
@@ -42,8 +43,23 @@ export interface SyncCategories {
   collections: boolean;
   automation: boolean;
   settings: boolean;
+  vault: boolean;
   clipTypesAll: boolean;
   clipTypes: string[];
+}
+
+export interface VaultSyncEntry {
+  sync_uid: string;
+  created_at: number;
+  type: string;
+  title_hint: string;
+  payload: {
+    content: string;
+    source: string | null;
+    tags_json: string;
+    metadata_json: string;
+    migrated_from_clip_id?: number;
+  };
 }
 
 export interface SyncBundleV1 {
@@ -54,6 +70,7 @@ export interface SyncBundleV1 {
   deviceLabel?: string;
   devices?: Record<string, { label: string; seenAt: number }>;
   categories?: SyncCategories;
+  vault?: VaultSyncEntry[];
   clips?: Array<{
     uid: string;
     lm: number;
@@ -106,6 +123,7 @@ export function parseSyncCategories(raw: string | undefined): SyncCategories {
     collections: true,
     automation: true,
     settings: true,
+    vault: false,
     clipTypesAll: true,
     clipTypes: [],
   };
@@ -329,8 +347,22 @@ function mergeSettings(
   return out;
 }
 
+function mergeVault(
+  a: VaultSyncEntry[] | undefined,
+  b: VaultSyncEntry[] | undefined
+): VaultSyncEntry[] {
+  const m = new Map<string, VaultSyncEntry>();
+  for (const x of [...(a ?? []), ...(b ?? [])]) {
+    if (!m.has(x.sync_uid)) {
+      m.set(x.sync_uid, x);
+    }
+  }
+  return [...m.values()];
+}
+
 export function mergeSyncBundles(local: SyncBundleV1, remote: SyncBundleV1): SyncBundleV1 {
   const mergedClips = mergeClipSyncEntries(local.clips, remote.clips);
+  const mergedVault = mergeVault(local.vault, remote.vault);
 
   return {
     format: 'devclip-sync',
@@ -341,6 +373,7 @@ export function mergeSyncBundles(local: SyncBundleV1, remote: SyncBundleV1): Syn
     categories: local.categories ?? remote.categories,
     devices: mergeDevices(local.devices, remote.devices),
     clips: mergedClips.length ? mergedClips : undefined,
+    vault: mergedVault.length ? mergedVault : undefined,
     snippets: (() => {
       const s = mergeSnippets(local.snippets, remote.snippets);
       return s.length ? s : undefined;
@@ -357,14 +390,18 @@ export function mergeSyncBundles(local: SyncBundleV1, remote: SyncBundleV1): Syn
   };
 }
 
-export function applySyncBundleToDb(bundle: SyncBundleV1): {
+export function applySyncBundleToDb(
+  bundle: SyncBundleV1,
+  vaultSessionKey?: Buffer | null
+): {
   clips: number;
   snippets: number;
   automation: number;
   collections: number;
   settings: number;
+  vault: number;
 } {
-  const stats = { clips: 0, snippets: 0, automation: 0, collections: 0, settings: 0 };
+  const stats = { clips: 0, snippets: 0, automation: 0, collections: 0, settings: 0, vault: 0 };
   const cat = bundle.categories ?? parseSyncCategories(undefined);
 
   if (bundle.clips?.length && cat.clips) {
@@ -454,6 +491,17 @@ export function applySyncBundleToDb(bundle: SyncBundleV1): {
       if (!SYNC_SETTING_KEYS.has(k)) continue;
       setSetting(k, ent.v);
       stats.settings++;
+    }
+  }
+
+  if (bundle.vault?.length && cat.vault && vaultSessionKey) {
+    for (const entry of bundle.vault) {
+      try {
+        upsertVaultEntryFromSync(vaultSessionKey, entry);
+        stats.vault++;
+      } catch {
+        // skip malformed entries
+      }
     }
   }
 

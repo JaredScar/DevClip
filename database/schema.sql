@@ -97,7 +97,8 @@ CREATE TABLE IF NOT EXISTS vault_entries (
   created_at    INTEGER NOT NULL DEFAULT (strftime('%s','now')),
   type          TEXT    NOT NULL DEFAULT 'text',
   title_hint    TEXT    NOT NULL DEFAULT '',
-  ciphertext    BLOB    NOT NULL
+  ciphertext    BLOB    NOT NULL,
+  sync_uid      TEXT
 );
 
 CREATE INDEX IF NOT EXISTS idx_vault_created ON vault_entries(created_at DESC);
