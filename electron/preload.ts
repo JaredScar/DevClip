@@ -255,6 +255,10 @@ const api = {
     ipcRenderer.invoke('updater:install') as Promise<{ ok: boolean }>,
   updaterGetStatus: () =>
     ipcRenderer.invoke('updater:getStatus') as Promise<Record<string, unknown>>,
+  updaterSetChannel: (channel: 'stable' | 'beta' | 'nightly') =>
+    ipcRenderer.invoke('updater:setChannel', channel) as Promise<{ ok: boolean; channel: string }>,
+  updaterGetChannel: () =>
+    ipcRenderer.invoke('updater:getChannel') as Promise<'stable' | 'beta' | 'nightly'>,
   onUpdaterStatus: (callback: (status: Record<string, unknown>) => void) => {
     const handler = (_event: IpcRendererEvent, status: Record<string, unknown>) => callback(status);
     ipcRenderer.on('updater:status', handler);

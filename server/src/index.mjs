@@ -47,7 +47,31 @@ fastify.post(
   }
 );
 
-fastify.get('/health', async () => ({ ok: true }));
+fastify.get('/health', async () => {
+  // Basic health check - in production, also verify database connectivity
+  const health = {
+    ok: true,
+    timestamp: new Date().toISOString(),
+    version: process.env.npm_package_version || '1.0.0',
+    checks: {
+      server: 'healthy',
+    },
+  };
+
+  // If database is configured, check connection
+  if (process.env.DATABASE_URL) {
+    try {
+      const { pool } = await import('./db.mjs');
+      await pool.query('SELECT 1');
+      health.checks.database = 'healthy';
+    } catch {
+      health.checks.database = 'unhealthy';
+      health.ok = false;
+    }
+  }
+
+  return health;
+});
 
 const port = Number(process.env.PORT) || 8787;
 const host = process.env.HOST || '0.0.0.0';

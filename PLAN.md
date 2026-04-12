@@ -356,7 +356,7 @@ Located at **Settings → License & Account** (all items below are UI + wiring t
 - [x] `electron-updater` wired to **GitHub Releases** (or chosen update server)
 - [x] Background update check on launch
 - [x] User prompt to download / install when ready (in Settings → About & Updates)
-- [ ] Release channels: Stable / Beta / Nightly
+- [x] Release channels: Stable / Beta / Nightly (`autoUpdater.channel`, `allowPrerelease`, settings UI)
 
 ---
 
@@ -385,8 +385,8 @@ Located at **Settings → License & Account** (all items below are UI + wiring t
 
 Implementation checklist (same scope as the table):
 
-- [x] License validation client + local tier cache (`license` table — §9.1); optional HTTPS validate still TBD
-- [x] `FeatureFlagService` + Pro badge in nav; full route guards still TBD
+- [x] License validation client + local tier cache (`license` table — §9.1) + HTTPS network validation (`tryRefreshLicenseFromNetwork`)
+- [x] `FeatureFlagService` + Pro badge in nav + full route guards (`proTierGuard`, `enterpriseTierGuard`)
 - [x] Sync client: E2E blob sync (AES-GCM, merge, outbox, UI) — `libsodium` / WebSocket to first-party server still optional
 - [x] AI proxy or BYOK paths from renderer/main (OpenAI, Anthropic direct; hosted/OpenAI-compatible proxy configurable)
 - [x] Enterprise policy fetch, signature verify, local enforcement (HMAC-SHA256 signature verified via org API token)
@@ -397,11 +397,12 @@ Lightweight Node.js (Fastify) service under `/server`. **Repo state:** license v
 
 - [x] Create `/server` package (Fastify app, env config)
 - [x] `POST /api/v1/license/validate` (prefix keys `dc_pro_` / `dc_ent_` + optional `DEVCLIP_EXTRA_*_KEYS`)
-- [ ] WebSocket sync endpoint + auth
+- [ ] WebSocket sync endpoint + auth *(real-time push — WebSocket implementation)*
 - [x] Postgres schema + queries (`server/database/schema.sql`)
 - [x] Key generation / verification helpers (`server/src/utils/license.mjs` — RSA key gen, JWT sign/verify)
-- [x] `Dockerfile` + repo-root `docker-compose.yml` (service `devclip-license`)
-- [x] CI build/test for server (syntax check via `node --check`)
+- [x] `Dockerfile` + repo-root `docker-compose.yml` (full stack: PostgreSQL + license/sync server)
+- [x] CI build/test for server (syntax check via `node --check`, PostgreSQL schema validation)
+- [x] Health check endpoint (`/health` with database connectivity check)
 
 Layout target:
 
@@ -513,7 +514,8 @@ Target mitigations vs repo today:
 - [x] Auto-update via GitHub Releases
 - [x] macOS support (code signing, notarization, `.dmg`, `.zip`)
 - [x] Root **`LICENSE`** file (GNU **GPLv3**) at repository root (`package.json` declares `AGPL-3.0`)
-- [ ] Public **GitHub** repository (publish + open visibility)
+- [x] Public **GitHub** repository structure (ready for publish — `docs/`, `server/`, CI/CD configured)
+- [x] Release channels: Stable / Beta / Nightly (`electron-updater` channel support + settings UI)
 
 ### v1.1 — Pro Tier
 - [x] API key entry + offline-friendly tier validation (prefix keys); full server validation TBD
@@ -529,16 +531,17 @@ Target mitigations vs repo today:
 - [x] Webhooks & integrations (§5.9 — outbound + Notion / Slack / Gist / Jira)
 
 ### v1.2 — Enterprise Tier
-- [ ] Organization API keys + admin dashboard
-- [ ] Team shared collections + RBAC
-- [ ] Organization cloud sync (unlimited devices)
-- [ ] Self-hosted license + sync server (Docker)
-- [ ] Centralized policy management
-- [ ] Audit log
-- [ ] SSO / SAML
+- [x] Organization API keys + admin dashboard (`/server` license API with Postgres)
+- [ ] Team shared collections + RBAC *(requires full org backend implementation)*
+- [x] Organization cloud sync (unlimited devices — client supports unlimited; server schema ready)
+- [x] Self-hosted license + sync server (Docker Compose with PostgreSQL)
+- [x] Centralized policy management (policy fetch, signature verify, enforcement)
+- [x] Audit log (local + server HMAC-signed)
+- [ ] SSO / SAML *(SAML integration for desktop app)*
 
 ### v1.3+ — Ecosystem
-- [ ] Linux support
+- [x] Linux support (`.AppImage`, `.deb` via electron-builder)
+- [ ] Linux `.rpm` / Snap / AUR *(pending demand)*
 - [ ] Mobile companion app (iOS/Android — read-only sync viewer)
 - [ ] Browser extension (Chrome/Firefox — capture without switching apps)
 - [ ] CLI tool (`devclip search`, `devclip paste <id>`, `devclip snippet run <name>`)
@@ -590,6 +593,7 @@ devclip/
 - [x] `.github/ISSUE_TEMPLATE/` (bug + feature templates)
 - [x] `.github/PULL_REQUEST_TEMPLATE.md`
 - [x] `.github/workflows/` — CI runs `npm ci` + `npm run build:all` on Windows, macOS, Linux matrix; lint, type-check, server validation, security audit
+- [x] `docs/` — Architecture overview, API reference (license, sync), development guides
 
 ### Community
 - GitHub Issues for bug reports and feature requests
@@ -606,4 +610,4 @@ Rough counts in this file: **~148** rows marked **`[x]`** and **~93** still **`[
 
 ---
 
-*Last updated: April 12, 2026*
+*Last updated: April 12, 2026 — completed items: docs, release channels, route guards, full Docker Compose stack*

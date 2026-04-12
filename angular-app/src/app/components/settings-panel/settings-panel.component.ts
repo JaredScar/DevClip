@@ -457,6 +457,23 @@ import { FeatureFlagService } from '../../services/feature-flag.service';
         <p class="mb-2 text-xs text-zinc-500 lite:text-zinc-600">
           DevClip v{{ appVersion }} &mdash; Automatically checks for new versions on startup.
         </p>
+        <label class="mb-3 flex flex-col gap-1 text-zinc-300 lite:text-zinc-800">
+          <span>Release channel</span>
+          <select
+            class="rounded border border-white/10 bg-[#2a2a2a] p-2 text-xs text-white lite:border-zinc-300 lite:bg-white lite:text-zinc-900"
+            [(ngModel)]="releaseChannel"
+            (change)="onReleaseChannelChange()"
+          >
+            <option value="stable">Stable (recommended)</option>
+            <option value="beta">Beta (early access)</option>
+            <option value="nightly">Nightly (bleeding edge)</option>
+          </select>
+          <span class="text-[10px] text-zinc-500 lite:text-zinc-600">
+            @if (releaseChannel === 'stable') { Receive well-tested releases. }
+            @if (releaseChannel === 'beta') { Get early access to new features. May contain bugs. }
+            @if (releaseChannel === 'nightly') { Latest development builds. Unstable. }
+          </span>
+        </label>
         <div class="mb-2 flex flex-wrap gap-2">
           <button
             type="button"
@@ -565,6 +582,7 @@ export class SettingsPanelComponent implements OnInit, OnDestroy {
   updaterVersion = '';
   updaterPercent = 0;
   updaterError = '';
+  releaseChannel: 'stable' | 'beta' | 'nightly' = 'stable';
   private updaterUnsub: (() => void) | null = null;
 
   get proHistoryCapDisplay(): string {
@@ -616,6 +634,24 @@ export class SettingsPanelComponent implements OnInit, OnDestroy {
     this.updaterUnsub = window.devclip.onUpdaterStatus((s) => {
       this.applyUpdaterStatus(s);
     });
+    // Load release channel
+    const ch = (s['releaseChannel'] ?? 'stable').trim();
+    this.releaseChannel = ['stable', 'beta', 'nightly'].includes(ch) ? ch as 'stable' | 'beta' | 'nightly' : 'stable';
+    // Sync channel to main process
+    void this.syncReleaseChannelToMain();
+  }
+
+  private async syncReleaseChannelToMain(): Promise<void> {
+    try {
+      await window.devclip.updaterSetChannel(this.releaseChannel);
+    } catch {
+      // updater not available in dev
+    }
+  }
+
+  async onReleaseChannelChange(): Promise<void> {
+    await window.devclip.settingsSet('releaseChannel', this.releaseChannel);
+    await this.syncReleaseChannelToMain();
   }
 
   ngOnDestroy(): void {

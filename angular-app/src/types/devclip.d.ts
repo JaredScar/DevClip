@@ -265,6 +265,8 @@ export interface DevClipApi {
   updaterDownload: () => Promise<{ ok: boolean; error?: string }>;
   updaterInstall: () => Promise<{ ok: boolean }>;
   updaterGetStatus: () => Promise<Record<string, unknown>>;
+  updaterSetChannel: (channel: 'stable' | 'beta' | 'nightly') => Promise<{ ok: boolean; channel: string }>;
+  updaterGetChannel: () => Promise<'stable' | 'beta' | 'nightly'>;
   onUpdaterStatus: (callback: (status: Record<string, unknown>) => void) => () => void;
 }
 

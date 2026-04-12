@@ -1,6 +1,8 @@
 import { BrowserWindow, ipcMain } from 'electron';
 import { autoUpdater } from 'electron-updater';
 
+export type ReleaseChannel = 'stable' | 'beta' | 'nightly';
+
 export type UpdaterStatus =
   | { phase: 'idle' }
   | { phase: 'checking' }
@@ -11,6 +13,7 @@ export type UpdaterStatus =
   | { phase: 'error'; message: string };
 
 let currentStatus: UpdaterStatus = { phase: 'idle' };
+let currentChannel: ReleaseChannel = 'stable';
 let getMainWin: (() => BrowserWindow | null) | null = null;
 
 function broadcast(status: UpdaterStatus): void {
@@ -21,11 +24,34 @@ function broadcast(status: UpdaterStatus): void {
   }
 }
 
-export function setupAutoUpdater(getWindow: () => BrowserWindow | null): void {
-  getMainWin = getWindow;
+function getChannelFromVersion(version: string): ReleaseChannel {
+  if (version.includes('nightly') || version.includes('dev')) return 'nightly';
+  if (version.includes('beta') || version.includes('alpha') || version.includes('rc')) return 'beta';
+  return 'stable';
+}
 
+function getFeedURLForChannel(channel: ReleaseChannel): string | undefined {
+  // GitHub releases use different URLs for pre-releases
+  // electron-updater handles this automatically via GitHub provider
+  // but we can customize if needed
+  return undefined; // Use default from electron-builder config
+}
+
+export function setupAutoUpdater(
+  getWindow: () => BrowserWindow | null,
+  options?: { channel?: ReleaseChannel }
+): void {
+  getMainWin = getWindow;
+  currentChannel = options?.channel ?? 'stable';
+
+  // Configure channel for pre-release updates
+  autoUpdater.channel = currentChannel;
+  autoUpdater.allowPrerelease = currentChannel !== 'stable';
   autoUpdater.autoDownload = false;
   autoUpdater.autoInstallOnAppQuit = true;
+
+  // Log channel configuration
+  console.log(`[AutoUpdater] Configured for ${currentChannel} channel`);
 
   autoUpdater.on('checking-for-update', () => {
     broadcast({ phase: 'checking' });
@@ -80,6 +106,16 @@ export function setupAutoUpdater(getWindow: () => BrowserWindow | null): void {
   });
 
   ipcMain.handle('updater:getStatus', () => currentStatus);
+
+  ipcMain.handle('updater:setChannel', (_event, channel: ReleaseChannel) => {
+    currentChannel = channel;
+    autoUpdater.channel = channel;
+    autoUpdater.allowPrerelease = channel !== 'stable';
+    console.log(`[AutoUpdater] Channel changed to ${channel}`);
+    return { ok: true as const, channel };
+  });
+
+  ipcMain.handle('updater:getChannel', () => currentChannel);
 }
 
 /** Silently check once on startup; errors are swallowed to not disrupt startup. */
