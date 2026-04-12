@@ -222,7 +222,7 @@ Located at **Settings → License & Account** (all items below are UI + wiring t
 - [x] Smart collections (saved search / query, auto-updating)
 - [x] Manual collections (named lists of clip IDs)
 - [x] Drag-and-drop clip organization into collections
-- [x] Collections in main window (overlay integration TBD)
+- [x] Collections in main window + overlay window (`overlay.component.ts` — tab 3 with Collections panel)
 - [x] Import/export collections JSON
 - [x] Wire **Collections** UI panel to SQLite `collections` (see §9.1)
 
@@ -286,7 +286,7 @@ Located at **Settings → License & Account** (all items below are UI + wiring t
 - [x] **Pull-based** shared library per device (admin publishes JSON; clients import on demand)
 - [x] **Hosted** multi-user snippet library API (CRUD, conflict resolution) — `server/src/routes/snippets.mjs`
 - [ ] RBAC: Owner / Admin / Member / Viewer *(full permission system — requires policy enforcement layer)*
-- [ ] Real-time push to all team members *(WebSocket / org server — §8.3)*
+- [x] Real-time push to all team members — WebSocket server (`server/src/websocket/sync.mjs`) + client (`electron/syncWebsocket.ts`)
 - [ ] Version history for shared snippets (who / when) *(server-side product)*
 - [ ] Optional approval workflow for snippet changes *(server-side product)*
 
@@ -304,6 +304,7 @@ Located at **Settings → License & Account** (all items below are UI + wiring t
 - [x] **`/server` monorepo package** — Fastify `POST /api/v1/license/validate` (+ optional env extra keys)
 - [x] **Offline / air-gapped tier unlock** — `dc_pro_` / `dc_ent_` keys validated with **no network** (local + prefix rules)
 - [x] **Signed** offline license *files* (JWT / HSM) with cryptographic expiry — `server/src/utils/license.mjs` + `server/scripts/cli/license-cli.mjs`
+- [x] **Customer-managed blob storage** — S3-compatible sync target (`electron/s3Sync.ts` — AWS S3, MinIO, Wasabi, Backblaze B2, DigitalOcean Spaces)
 
 ### 6.5 Centralized Policy Management
 - [x] **Remote policy document** pulled from HTTPS URL (startup, 30 min interval, manual)
@@ -348,8 +349,8 @@ Located at **Settings → License & Account** (all items below are UI + wiring t
 - [x] macOS `.dmg` + **Homebrew Cask** templates (`dist/homebrew/`)
 - [x] Linux `.AppImage` — `electron-builder` target configured
 - [x] Linux `.deb` — `electron-builder` target configured
-- [ ] Linux `.rpm` — pending demand
-- [ ] Linux **Snap** — pending demand + snapcraft store account
+- [x] Linux `.rpm` — `electron-builder` target configured
+- [x] Linux **Snap** — `electron-builder` target configured (strict confinement, plugs for clipboard, network)
 - [ ] Linux **AUR** — community-maintained
 
 ### 7.3 Auto-Update
@@ -389,7 +390,7 @@ Implementation checklist (same scope as the table):
 
 - [x] License validation client + local tier cache (`license` table — §9.1) + HTTPS network validation (`tryRefreshLicenseFromNetwork`)
 - [x] `FeatureFlagService` + Pro badge in nav + full route guards (`proTierGuard`, `enterpriseTierGuard`)
-- [x] Sync client: E2E blob sync (AES-GCM, merge, outbox, UI) — `libsodium` / WebSocket to first-party server still optional
+- [x] Sync client: E2E blob sync (AES-GCM, merge, outbox, UI) + WebSocket real-time sync client (`electron/syncWebsocket.ts`)
 - [x] AI proxy or BYOK paths from renderer/main (OpenAI, Anthropic direct; hosted/OpenAI-compatible proxy configurable)
 - [x] Enterprise policy fetch, signature verify, local enforcement (HMAC-SHA256 signature verified via org API token)
 
@@ -525,7 +526,7 @@ Target mitigations vs repo today:
 - [x] Unlimited history/snippets (within Pro cap settings / large paid limits — see §5.1)
 - [x] AI Actions (DevClip-hosted + BYOK)
 - [x] Automation rules engine (persisted + run on new clip)
-- [x] Collections (manual lists + import/export JSON); smart query UI still TBD
+- [x] Collections (manual lists + import/export JSON) + smart query UI (visual query builder with type, tag, regex, date range, length filters)
 - [x] Timeline view (local activity by day; no cloud)
 - [x] Cloud sync (up to 5 devices, E2E encrypted — client merge + HTTPS blob; first-party hosted service TBD)
 - [x] Vault (local encrypted vault + separate PIN)
@@ -616,4 +617,4 @@ Rough counts in this file: **~148** rows marked **`[x]`** and **~93** still **`[
 
 ---
 
-*Last updated: April 12, 2026 — completed: WebSocket sync, snippet API, biometric unlock, CLI tool, docs, release channels, route guards, Docker Compose*
+*Last updated: April 12, 2026 — completed: Linux rpm/snap, smart query UI, collections overlay, WebSocket client, S3 sync, docs, release channels, route guards, Docker Compose, CLI tool*

@@ -146,6 +146,18 @@
           "arch": [
             "x64"
           ]
+        },
+        {
+          "target": "rpm",
+          "arch": [
+            "x64"
+          ]
+        },
+        {
+          "target": "snap",
+          "arch": [
+            "x64"
+          ]
         }
       ],
       "icon": "angular-app/public/devclip_icon_transparent.svg",
@@ -154,6 +166,23 @@
       "vendor": "DevClip",
       "synopsis": "Developer-focused clipboard manager",
       "description": "DevClip is an open-source clipboard manager with snippets, AI actions, and cloud sync support."
+    },
+    "snap": {
+      "confinement": "strict",
+      "grade": "stable",
+      "plugs": [
+        "default",
+        "clipboard-manager",
+        "home",
+        "network",
+        "network-bind",
+        "removable-media"
+      ]
+    },
+    "rpm": {
+      "fpm": [
+        "--rpm-os=linux"
+      ]
     },
     "publish": [
       {

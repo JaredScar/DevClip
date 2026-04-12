@@ -41,47 +41,177 @@ interface CollectionRow {
           <span>Smart collection (auto membership from query)</span>
         </label>
         @if (newIsSmart) {
-          <div class="mb-2 grid gap-2 sm:grid-cols-2">
-            <label class="flex flex-col gap-1 text-[11px] text-zinc-400">
-              Type
-              <select
-                class="rounded border border-white/10 bg-[#2a2a2a] p-2 text-xs text-white lite:border-zinc-300 lite:bg-white lite:text-zinc-900"
-                [(ngModel)]="smartType"
-              >
-                <option value="all">All types</option>
-                <option value="text">text</option>
-                <option value="code">code</option>
-                <option value="json">json</option>
-                <option value="url">url</option>
-                <option value="sql">sql</option>
-                <option value="email">email</option>
-                <option value="secret">secret</option>
-                <option value="stack-trace">stack-trace</option>
-                <option value="image">image</option>
-              </select>
-            </label>
-            <label class="flex flex-col gap-1 text-[11px] text-zinc-400">
-              Tag (optional)
-              <input
-                class="rounded border border-white/10 bg-[#2a2a2a] p-2 text-xs text-white lite:border-zinc-300 lite:bg-white lite:text-zinc-900"
-                [(ngModel)]="smartTag"
-                placeholder="must have tag"
-              />
-            </label>
-            <label class="sm:col-span-2 flex flex-col gap-1 text-[11px] text-zinc-400">
-              Content contains (optional)
-              <input
-                class="rounded border border-white/10 bg-[#2a2a2a] p-2 font-mono text-xs text-white lite:border-zinc-300 lite:bg-white lite:text-zinc-900"
-                [(ngModel)]="smartContains"
-              />
-            </label>
-            <label class="sm:col-span-2 flex flex-col gap-1 text-[11px] text-zinc-400">
-              Source contains (optional)
-              <input
-                class="rounded border border-white/10 bg-[#2a2a2a] p-2 text-xs text-white lite:border-zinc-300 lite:bg-white lite:text-zinc-900"
-                [(ngModel)]="smartSource"
-              />
-            </label>
+          <div class="mb-3 rounded-lg border border-devclip-accent/20 bg-devclip-accent/5 p-3 lite:border-devclip-accent/30 lite:bg-devclip-accent/10">
+            <div class="mb-2 flex items-center gap-2">
+              <span class="text-[10px] font-semibold uppercase text-devclip-accent">Smart Query Builder</span>
+              <span class="rounded bg-zinc-800 px-1.5 py-0.5 text-[9px] text-zinc-400 lite:bg-zinc-200">Auto-updating</span>
+            </div>
+
+            <!-- Query Type -->
+            <div class="mb-2 grid gap-2 sm:grid-cols-2">
+              <label class="flex flex-col gap-1 text-[11px] text-zinc-400">
+                <span class="flex items-center gap-1">
+                  Content Type
+                  <span class="rounded bg-zinc-700 px-1 text-[8px] text-zinc-400 lite:bg-zinc-300">Filter</span>
+                </span>
+                <select
+                  class="rounded border border-white/10 bg-[#2a2a2a] p-2 text-xs text-white lite:border-zinc-300 lite:bg-white lite:text-zinc-900"
+                  [(ngModel)]="smartType"
+                >
+                  <option value="all">All types</option>
+                  <option value="text">text</option>
+                  <option value="code">code</option>
+                  <option value="json">json</option>
+                  <option value="url">url</option>
+                  <option value="sql">sql</option>
+                  <option value="email">email</option>
+                  <option value="secret">secret</option>
+                  <option value="stack-trace">stack-trace</option>
+                  <option value="image">image</option>
+                </select>
+              </label>
+
+              <label class="flex flex-col gap-1 text-[11px] text-zinc-400">
+                <span class="flex items-center gap-1">
+                  Tag Filter
+                  <span class="rounded bg-zinc-700 px-1 text-[8px] text-zinc-400 lite:bg-zinc-300">Optional</span>
+                </span>
+                <input
+                  class="rounded border border-white/10 bg-[#2a2a2a] p-2 text-xs text-white lite:border-zinc-300 lite:bg-white lite:text-zinc-900"
+                  [(ngModel)]="smartTag"
+                  placeholder="e.g., work, personal, important"
+                />
+              </label>
+            </div>
+
+            <!-- Content Filters -->
+            <div class="mb-2 grid gap-2 sm:grid-cols-2">
+              <label class="flex flex-col gap-1 text-[11px] text-zinc-400">
+                <span class="flex items-center gap-1">
+                  Content Contains
+                  <span class="rounded bg-zinc-700 px-1 text-[8px] text-zinc-400 lite:bg-zinc-300">Text</span>
+                </span>
+                <input
+                  class="rounded border border-white/10 bg-[#2a2a2a] p-2 font-mono text-xs text-white lite:border-zinc-300 lite:bg-white lite:text-zinc-900"
+                  [(ngModel)]="smartContains"
+                  placeholder="substring to match..."
+                />
+              </label>
+
+              <label class="flex flex-col gap-1 text-[11px] text-zinc-400">
+                <span class="flex items-center gap-1">
+                  Content Regex
+                  <span class="rounded bg-zinc-700 px-1 text-[8px] text-zinc-400 lite:bg-zinc-300">Pattern</span>
+                </span>
+                <input
+                  class="rounded border border-white/10 bg-[#2a2a2a] p-2 font-mono text-xs text-white lite:border-zinc-300 lite:bg-white lite:text-zinc-900"
+                  [(ngModel)]="smartContentRegex"
+                  placeholder="^function|import.*from"
+                />
+              </label>
+            </div>
+
+            <!-- Source & Date -->
+            <div class="mb-2 grid gap-2 sm:grid-cols-2">
+              <label class="flex flex-col gap-1 text-[11px] text-zinc-400">
+                <span class="flex items-center gap-1">
+                  Source App
+                  <span class="rounded bg-zinc-700 px-1 text-[8px] text-zinc-400 lite:bg-zinc-300">Where copied from</span>
+                </span>
+                <input
+                  class="rounded border border-white/10 bg-[#2a2a2a] p-2 text-xs text-white lite:border-zinc-300 lite:bg-white lite:text-zinc-900"
+                  [(ngModel)]="smartSource"
+                  placeholder="e.g., VS Code, Chrome, Terminal"
+                />
+              </label>
+
+              <label class="flex flex-col gap-1 text-[11px] text-zinc-400">
+                <span class="flex items-center gap-1">
+                  Date Range
+                  <span class="rounded bg-zinc-700 px-1 text-[8px] text-zinc-400 lite:bg-zinc-300">Time window</span>
+                </span>
+                <select
+                  class="rounded border border-white/10 bg-[#2a2a2a] p-2 text-xs text-white lite:border-zinc-300 lite:bg-white lite:text-zinc-900"
+                  [(ngModel)]="smartDateRange"
+                >
+                  <option value="all">Any time</option>
+                  <option value="today">Today</option>
+                  <option value="week">Past 7 days</option>
+                  <option value="month">Past 30 days</option>
+                  <option value="quarter">Past 90 days</option>
+                </select>
+              </label>
+            </div>
+
+            <!-- Advanced Options -->
+            <div class="mb-2 rounded border border-white/5 bg-black/20 p-2 lite:border-zinc-200 lite:bg-zinc-100">
+              <label class="flex cursor-pointer items-center gap-2 text-[11px] text-zinc-400">
+                <input type="checkbox" [(ngModel)]="smartShowAdvanced" />
+                <span>Show advanced options</span>
+              </label>
+
+              @if (smartShowAdvanced) {
+                <div class="mt-2 grid gap-2 sm:grid-cols-2">
+                  <label class="flex flex-col gap-1 text-[11px] text-zinc-400">
+                    Min Length
+                    <input
+                      type="number"
+                      class="rounded border border-white/10 bg-[#2a2a2a] p-2 text-xs text-white lite:border-zinc-300 lite:bg-white lite:text-zinc-900"
+                      [(ngModel)]="smartMinLength"
+                      placeholder="0"
+                    />
+                  </label>
+
+                  <label class="flex flex-col gap-1 text-[11px] text-zinc-400">
+                    Max Length
+                    <input
+                      type="number"
+                      class="rounded border border-white/10 bg-[#2a2a2a] p-2 text-xs text-white lite:border-zinc-300 lite:bg-white lite:text-zinc-900"
+                      [(ngModel)]="smartMaxLength"
+                      placeholder="∞"
+                    />
+                  </label>
+
+                  <label class="flex flex-col gap-1 text-[11px] text-zinc-400">
+                    Use Count ≥
+                    <input
+                      type="number"
+                      class="rounded border border-white/10 bg-[#2a2a2a] p-2 text-xs text-white lite:border-zinc-300 lite:bg-white lite:text-zinc-900"
+                      [(ngModel)]="smartMinUses"
+                      placeholder="0"
+                    />
+                  </label>
+
+                  <label class="flex flex-col gap-1 text-[11px] text-zinc-400">
+                    Pinned Only
+                    <select
+                      class="rounded border border-white/10 bg-[#2a2a2a] p-2 text-xs text-white lite:border-zinc-300 lite:bg-white lite:text-zinc-900"
+                      [(ngModel)]="smartPinnedOnly"
+                    >
+                      <option value="false">No</option>
+                      <option value="true">Yes</option>
+                    </select>
+                  </label>
+                </div>
+              }
+            </div>
+
+            <!-- Live Preview -->
+            @if (smartPreviewCount !== null) {
+              <div class="mt-2 rounded border border-white/5 bg-black/30 p-2 lite:border-zinc-300 lite:bg-zinc-200">
+                <div class="flex items-center justify-between">
+                  <span class="text-[11px] text-zinc-400">Preview:</span>
+                  <span class="text-xs font-semibold text-devclip-accent">{{ smartPreviewCount }} matches</span>
+                </div>
+                <button
+                  type="button"
+                  class="mt-1 text-[10px] text-zinc-500 underline hover:text-zinc-300"
+                  (click)="refreshSmartPreview()"
+                >
+                  Refresh count
+                </button>
+              </div>
+            }
           </div>
         }
         <div class="flex flex-wrap gap-2">
@@ -214,6 +344,14 @@ export class CollectionsPanelComponent implements OnInit {
   smartContains = '';
   smartTag = '';
   smartSource = '';
+  smartContentRegex = '';
+  smartDateRange = 'all';
+  smartShowAdvanced = false;
+  smartMinLength: number | null = null;
+  smartMaxLength: number | null = null;
+  smartMinUses: number | null = null;
+  smartPinnedOnly = 'false';
+  smartPreviewCount: number | null = null;
   addTargetIdStr = '';
 
   async ngOnInit(): Promise<void> {
@@ -231,7 +369,7 @@ export class CollectionsPanelComponent implements OnInit {
   }
 
   buildSmartQueryJson(): string {
-    const o: Record<string, string> = {};
+    const o: Record<string, unknown> = {};
     if (this.smartType && this.smartType !== 'all') {
       o['type'] = this.smartType;
     } else {
@@ -240,13 +378,113 @@ export class CollectionsPanelComponent implements OnInit {
     if (this.smartContains.trim()) {
       o['contains'] = this.smartContains.trim();
     }
+    if (this.smartContentRegex.trim()) {
+      o['contentRegex'] = this.smartContentRegex.trim();
+    }
     if (this.smartTag.trim()) {
       o['tag'] = this.smartTag.trim();
     }
     if (this.smartSource.trim()) {
       o['sourceContains'] = this.smartSource.trim();
     }
+    if (this.smartDateRange && this.smartDateRange !== 'all') {
+      o['dateRange'] = this.smartDateRange;
+    }
+    if (this.smartMinLength !== null && this.smartMinLength > 0) {
+      o['minLength'] = this.smartMinLength;
+    }
+    if (this.smartMaxLength !== null && this.smartMaxLength > 0) {
+      o['maxLength'] = this.smartMaxLength;
+    }
+    if (this.smartMinUses !== null && this.smartMinUses > 0) {
+      o['minUses'] = this.smartMinUses;
+    }
+    if (this.smartPinnedOnly === 'true') {
+      o['pinnedOnly'] = true;
+    }
     return JSON.stringify(o);
+  }
+
+  async refreshSmartPreview(): Promise<void> {
+    try {
+      const queryJson = this.buildSmartQueryJson();
+      const query = JSON.parse(queryJson);
+      
+      // Build search options from query
+      const options: { typeFilter?: string; tagNames?: string[]; dateFrom?: number; dateTo?: number } = {};
+      
+      if (query.type && query.type !== 'all') {
+        options.typeFilter = query.type;
+      }
+      if (query.tag) {
+        options.tagNames = [query.tag];
+      }
+      if (query.dateRange && query.dateRange !== 'all') {
+        const now = Date.now();
+        const dayMs = 24 * 60 * 60 * 1000;
+        switch (query.dateRange) {
+          case 'today':
+            options.dateFrom = Math.floor((now - dayMs) / 1000);
+            break;
+          case 'week':
+            options.dateFrom = Math.floor((now - 7 * dayMs) / 1000);
+            break;
+          case 'month':
+            options.dateFrom = Math.floor((now - 30 * dayMs) / 1000);
+            break;
+          case 'quarter':
+            options.dateFrom = Math.floor((now - 90 * dayMs) / 1000);
+            break;
+        }
+        options.dateTo = Math.floor(now / 1000);
+      }
+      
+      // Search with the options
+      const clips = await window.devclip.searchClips(
+        query.contains || '',
+        options.typeFilter || 'all',
+        options
+      );
+      
+      // Apply additional filters
+      let filtered = clips;
+      
+      if (query.contentRegex) {
+        try {
+          const regex = new RegExp(query.contentRegex, 'i');
+          filtered = filtered.filter((c: Clip) => regex.test(c.content));
+        } catch {
+          // Invalid regex, skip
+        }
+      }
+      
+      if (query.sourceContains) {
+        const src = query.sourceContains.toLowerCase();
+        filtered = filtered.filter((c: Clip) => 
+          c.source?.toLowerCase().includes(src)
+        );
+      }
+      
+      if (query.minLength !== undefined) {
+        filtered = filtered.filter((c: Clip) => c.content.length >= query.minLength);
+      }
+      
+      if (query.maxLength !== undefined) {
+        filtered = filtered.filter((c: Clip) => c.content.length <= query.maxLength);
+      }
+      
+      if (query.minUses !== undefined) {
+        filtered = filtered.filter((c: Clip) => (c.use_count || 0) >= query.minUses);
+      }
+      
+      if (query.pinnedOnly) {
+        filtered = filtered.filter((c: Clip) => c.is_pinned === 1);
+      }
+      
+      this.smartPreviewCount = filtered.length;
+    } catch {
+      this.smartPreviewCount = null;
+    }
   }
 
   async loadRecentClips(): Promise<void> {

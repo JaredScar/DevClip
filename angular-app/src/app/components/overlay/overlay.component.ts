@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { Component, OnDestroy, OnInit, ViewChild, computed, inject, signal } from '@angular/core';
 import { ActionsPanelComponent } from '../actions-panel/actions-panel.component';
 import { ClipListComponent } from '../clip-list/clip-list.component';
+import { CollectionsPanelComponent } from '../collections-panel/collections-panel.component';
 import { FilterTabsComponent } from '../filter-tabs/filter-tabs.component';
 import { SearchBarComponent } from '../search-bar/search-bar.component';
 import { SettingsPanelComponent } from '../settings-panel/settings-panel.component';
@@ -27,6 +28,7 @@ import { OverlayStore, type OverlayTab } from '../../store/overlay.store';
     ActionsPanelComponent,
     SnippetsPanelComponent,
     StagingPanelComponent,
+    CollectionsPanelComponent,
     SettingsPanelComponent,
   ],
   animations: [
@@ -121,6 +123,8 @@ import { OverlayStore, type OverlayTab } from '../../store/overlay.store';
         <app-snippets-panel />
       } @else if (overlay.activeTab() === 'staging') {
         <app-staging-panel />
+      } @else if (overlay.activeTab() === 'collections') {
+        <app-collections-panel />
       } @else {
         <app-settings-panel />
       }
@@ -142,6 +146,7 @@ export class OverlayComponent implements OnInit, OnDestroy {
   readonly tabDefs: { id: OverlayTab; label: string }[] = [
     { id: 'history', label: 'History' },
     { id: 'snippets', label: 'Snippets' },
+    { id: 'collections', label: 'Collections' },
     { id: 'staging', label: 'Staging' },
     { id: 'settings', label: 'Settings' },
   ];
@@ -194,12 +199,13 @@ export class OverlayComponent implements OnInit, OnDestroy {
       return;
     }
 
-    if (ev.key >= '1' && ev.key <= '4' && !ev.ctrlKey && !ev.metaKey && !ev.altKey) {
+    if (ev.key >= '1' && ev.key <= '5' && !ev.ctrlKey && !ev.metaKey && !ev.altKey) {
       const map: Record<string, OverlayTab> = {
         '1': 'history',
         '2': 'snippets',
-        '3': 'staging',
-        '4': 'settings',
+        '3': 'collections',
+        '4': 'staging',
+        '5': 'settings',
       };
       const next = map[ev.key];
       if (next) {

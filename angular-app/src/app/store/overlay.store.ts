@@ -1,7 +1,7 @@
 import { Injectable, signal } from '@angular/core';
 import type { Clip } from '../models/clip.model';
 
-export type OverlayTab = 'history' | 'snippets' | 'staging' | 'settings';
+export type OverlayTab = 'history' | 'snippets' | 'collections' | 'staging' | 'settings';
 
 @Injectable({ providedIn: 'root' })
 export class OverlayStore {
@@ -17,7 +17,7 @@ export class OverlayStore {
   }
 
   cycleTabByIndex(i: number) {
-    const order: OverlayTab[] = ['history', 'snippets', 'staging', 'settings'];
+    const order: OverlayTab[] = ['history', 'snippets', 'collections', 'staging', 'settings'];
     const t = order[(i - 1 + order.length) % order.length];
     if (t) this.activeTab.set(t);
   }
