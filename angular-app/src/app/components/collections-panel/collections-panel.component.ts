@@ -440,14 +440,14 @@ export class CollectionsPanelComponent implements OnInit {
       }
       
       // Search with the options
-      const clips = await window.devclip.searchClips(
+      const clips = (await window.devclip.searchClips(
         query.contains || '',
         options.typeFilter || 'all',
         options
-      );
+      )) as Clip[];
       
       // Apply additional filters
-      let filtered = clips;
+      let filtered: Clip[] = clips;
       
       if (query.contentRegex) {
         try {

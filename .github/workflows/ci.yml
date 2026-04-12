@@ -31,7 +31,7 @@ jobs:
         run: npm ci
       
       - name: Run TypeScript compiler check (Electron)
-        run: npx tsc --noEmit
+        run: npx tsc -p tsconfig.electron.json --noEmit
       
       - name: Run Angular lint
         working-directory: angular-app

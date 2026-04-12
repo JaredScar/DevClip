@@ -279,7 +279,7 @@ type CloudAnalytics = {
             </div>
             @if (cloudTeamActivity()?.length) {
               <ul class="space-y-1 text-[12px] text-zinc-500 lite:text-zinc-600">
-                @for (let item of cloudTeamActivity(); track item) {
+                @for (item of cloudTeamActivity(); track item) {
                   <li>
                     {{ item?.event_type ?? 'event' }} ({{ item?.at ?? '' }})
                   </li>
