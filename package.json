@@ -113,7 +113,7 @@
       ],
       "icon": "angular-app/public/devclip_icon_transparent.svg",
       "category": "public.app-category.productivity",
-      " hardenedRuntime": true,
+      "hardenedRuntime": true,
       "gatekeeperAssess": false,
       "entitlements": "build/entitlements.mac.plist",
       "entitlementsInherit": "build/entitlements.mac.plist"
