@@ -238,6 +238,21 @@ const api = {
       | { ok: true; data: unknown }
       | { ok: false; error: string }
     >,
+  enterpriseGetCloudBillingSummary: () =>
+    ipcRenderer.invoke('enterprise:getCloudBillingSummary') as Promise<
+      | { ok: true; data: unknown }
+      | { ok: false; error: string }
+    >,
+  enterpriseGetCloudInvoices: () =>
+    ipcRenderer.invoke('enterprise:getCloudInvoices') as Promise<
+      | { ok: true; data: unknown }
+      | { ok: false; error: string }
+    >,
+  enterpriseGetCloudTeamActivity: () =>
+    ipcRenderer.invoke('enterprise:getCloudTeamActivity') as Promise<
+      | { ok: true; data: unknown }
+      | { ok: false; error: string }
+    >,
   enterpriseImportOrgSnippets: () =>
     ipcRenderer.invoke('enterprise:importOrgSnippets') as Promise<
       | { ok: true; imported: number; errors: string[] }

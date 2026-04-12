@@ -257,6 +257,12 @@ export interface DevClipApi {
   enterpriseFetchPolicy: () => Promise<{ ok: true; signatureValid: boolean } | { ok: false; error: string }>;
   enterpriseGetCloudAnalytics: () =>
     Promise<{ ok: true; data: unknown } | { ok: false; error: string }>;
+  enterpriseGetCloudBillingSummary: () =>
+    Promise<{ ok: true; data: unknown } | { ok: false; error: string }>;
+  enterpriseGetCloudInvoices: () =>
+    Promise<{ ok: true; data: unknown } | { ok: false; error: string }>;
+  enterpriseGetCloudTeamActivity: () =>
+    Promise<{ ok: true; data: unknown } | { ok: false; error: string }>;
   enterpriseImportOrgSnippets: () => Promise<
     { ok: true; imported: number; errors: string[] } | { ok: false; error: string }
   >;

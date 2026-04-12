@@ -38,39 +38,39 @@ These features require a hosted backend infrastructure operated by DevClip or se
 ---
 
 ### 3. Centralized Audit Aggregation
-**Status:** Partial — `DevClip-Cloud` provides initial audit ingestion endpoints (`POST /api/v1/audit/ingest`, `GET /api/v1/audit/summary`) backed by `audit_ingest` (schema scaffolded)
+**Status:** Partial — `DevClip-Cloud` provides audit ingestion endpoints plus admin export scaffolding (`POST /api/v1/audit/ingest`, `GET /api/v1/audit/summary`, `GET /api/v1/admin/audit/export`) and SIEM streaming scaffold (`POST /api/v1/admin/audit/stream`).
 
-- [ ] Organization-wide audit log aggregation
+- [x] Organization-wide audit log aggregation *(repo-scoped export/summary scaffolding; full UI and retention still hosted)*
 - [ ] Compliance dashboards (SOC 2, GDPR)
 - [ ] Anomaly detection on audit patterns
 - [ ] Long-term audit archival (7-year retention)
-- [ ] Audit log streaming to SIEM (Splunk, Datadog)
+- [x] Audit log streaming to SIEM (Splunk, Datadog) *(webhook publish scaffold via `SIEM_WEBHOOK_URL`)*
 
 **Why External:** Requires high-volume log ingestion, compliance certifications, and long-term storage infrastructure.
 
 ---
 
 ### 4. Version History for Shared Snippets
-**Status:** Not implemented — server-side product
+**Status:** Partial — implemented MVP version storage + word-diff metadata + version list/get/restore scaffolding in `DevClip-Cloud`
 
-- [ ] Automatic versioning when snippets are modified
-- [ ] Diff view between versions
-- [ ] Restore previous version
-- [ ] Version author and timestamp tracking
-- [ ] Comment/annotation on versions
+- [x] Automatic versioning when snippets are modified *(scaffolded; needs snippet update hook integration)*
+- [x] Diff metadata between versions (word-level diff metadata persisted)
+- [x] Restore previous version *(endpoint scaffolded)*
+- [x] Version author and timestamp tracking
+- [ ] Comment/annotation on versions *(future)*
 
 **Why External:** Requires server-side storage of version history and conflict resolution logic for concurrent edits.
 
 ---
 
 ### 5. Approval Workflow for Snippet Changes
-**Status:** Not implemented — server-side product
+**Status:** Partial — version records include `approval_state`; approval submit/approve/reject endpoint scaffolded in `DevClip-Cloud`
 
-- [ ] Submit snippet changes for approval
-- [ ] Designated approvers (admins/owners)
+- [x] Submit snippet changes for approval *(approval endpoint scaffolding)*
+- [ ] Designated approvers (admins/owners) *(future enforcement)*
 - [ ] Approval notifications via email/WebSocket
-- [ ] Reject with comments
-- [ ] Audit trail of approvals
+- [x] Reject with comments *(approval endpoint scaffolding)*
+- [ ] Audit trail of approvals *(future integration)*
 
 **Why External:** Requires workflow engine and notification infrastructure.
 

@@ -84,6 +84,49 @@ export function registerEnterpriseIpc(): void {
     }
   });
 
+  async function fetchCloudAdminJson(path: string) {
+    if (getCachedTier() !== 'enterprise') {
+      return { ok: false as const, error: 'Enterprise license required' };
+    }
+    const s = getSettingsMap();
+    const remoteUrl = String(s['syncRemoteUrl'] ?? '').trim();
+    if (!remoteUrl) {
+      return { ok: false as const, error: 'Set syncRemoteUrl first in Sync settings' };
+    }
+    const bearer = readIntegrationSecret(ud(), 'enterprise')?.trim();
+    if (!bearer) {
+      return { ok: false as const, error: 'Enterprise API token is not set' };
+    }
+    const url = remoteUrl.replace(/\/+$/, '') + path;
+    try {
+      const r = await fetch(url, {
+        headers: {
+          Accept: 'application/json',
+          Authorization: `Bearer ${bearer}`,
+        },
+        signal: AbortSignal.timeout(10_000),
+      });
+      if (!r.ok) {
+        return { ok: false as const, error: `HTTP ${r.status}` };
+      }
+      const data = (await r.json()) as unknown;
+      return { ok: true as const, data };
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : String(e);
+      return { ok: false as const, error: msg };
+    }
+  }
+
+  ipcMain.handle('enterprise:getCloudBillingSummary', () =>
+    fetchCloudAdminJson('/api/v1/admin/billing/summary')
+  );
+
+  ipcMain.handle('enterprise:getCloudInvoices', () => fetchCloudAdminJson('/api/v1/admin/billing/invoices'));
+
+  ipcMain.handle('enterprise:getCloudTeamActivity', () =>
+    fetchCloudAdminJson('/api/v1/admin/team/activity')
+  );
+
   ipcMain.handle('enterprise:saveSettings', (_e, patch: Record<string, string>) => {
     for (const [k, v] of Object.entries(patch ?? {})) {
       if (SETTINGS_KEYS.has(k)) {

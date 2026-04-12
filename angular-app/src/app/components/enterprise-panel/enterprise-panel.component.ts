@@ -266,8 +266,10 @@ type CloudAnalytics = {
             </div>
             <div class="rounded border border-white/5 bg-black/20 p-2 lite:border-zinc-200 lite:bg-zinc-50">
               <div class="text-[10px] uppercase text-zinc-500">Seats</div>
-              <div class="text-lg font-semibold text-emerald-400">—</div>
-              <div class="text-[10px] text-zinc-500">Billing sync pending</div>
+              <div class="text-lg font-semibold text-emerald-400">
+                {{ cloudBilling()?.seats_used ?? '—' }}/{{ cloudBilling()?.seats_total ?? '—' }}
+              </div>
+              <div class="text-[10px] text-zinc-500">From cloud billing snapshot</div>
             </div>
           </div>
 
@@ -275,9 +277,17 @@ type CloudAnalytics = {
             <div class="mb-2 text-xs text-zinc-300 lite:text-zinc-700">
               <strong>Recent team activity</strong>
             </div>
-            <p class="text-[12px] text-zinc-500 lite:text-zinc-600">
-              Scaffolding only: wire into `DevClip-Cloud` team activity endpoint.
-            </p>
+            @if (cloudTeamActivity()?.length) {
+              <ul class="space-y-1 text-[12px] text-zinc-500 lite:text-zinc-600">
+                @for (let item of cloudTeamActivity(); track item) {
+                  <li>
+                    {{ item?.event_type ?? 'event' }} ({{ item?.at ?? '' }})
+                  </li>
+                }
+              </ul>
+            } @else {
+              <p class="text-[12px] text-zinc-500 lite:text-zinc-600">No team activity found.</p>
+            }
           </div>
         </section>
 
@@ -380,6 +390,11 @@ export class EnterprisePanelComponent implements OnInit {
   cloudAnalytics = signal<CloudAnalytics | null>(null);
   cloudBusy = signal(false);
 
+  cloudBilling = signal<any | null>(null);
+  cloudInvoices = signal<any[] | null>(null);
+  cloudTeamActivity = signal<any[] | null>(null);
+  cloudBillingBusy = signal(false);
+
   async ngOnInit() {
     await this.reload();
   }
@@ -411,6 +426,27 @@ export class EnterprisePanelComponent implements OnInit {
       this.message.set(e instanceof Error ? e.message : String(e));
     } finally {
       this.cloudBusy.set(false);
+    }
+  }
+
+  async refreshCloudBilling() {
+    this.cloudBillingBusy.set(true);
+    try {
+      const [b, inv, act] = await Promise.all([
+        window.devclip.enterpriseGetCloudBillingSummary(),
+        window.devclip.enterpriseGetCloudInvoices(),
+        window.devclip.enterpriseGetCloudTeamActivity(),
+      ]);
+      if (b.ok) this.cloudBilling.set(b.data);
+      if (inv.ok) this.cloudInvoices.set((inv.data as any)?.invoices ?? []);
+      if (act.ok) this.cloudTeamActivity.set((act.data as any)?.activity ?? []);
+    } catch (e) {
+      this.cloudBilling.set(null);
+      this.cloudInvoices.set(null);
+      this.cloudTeamActivity.set(null);
+      this.message.set(e instanceof Error ? e.message : String(e));
+    } finally {
+      this.cloudBillingBusy.set(false);
     }
   }
 
