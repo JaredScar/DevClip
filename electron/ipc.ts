@@ -43,6 +43,11 @@ import {
   isBiometricEnabled,
   getBiometricSetupInstructions,
 } from './biometricAuth';
+import {
+  setupSAMLHandlers,
+  getSAMLSetupInstructions,
+  hasNativeSAML,
+} from './samlAuth';
 import { getInsightsSummary } from '../database/insights';
 import {
   deleteSnippet,
@@ -781,4 +786,11 @@ export function registerIpcHandlers(
     }
     return { ok: result };
   });
+
+  // SAML SSO handlers
+  setupSAMLHandlers();
+
+  // Additional SAML IPC handlers for Enterprise panel
+  ipcMain.handle('saml:getSetupInstructions', () => getSAMLSetupInstructions());
+  ipcMain.handle('saml:hasNativeSupport', () => hasNativeSAML());
 }

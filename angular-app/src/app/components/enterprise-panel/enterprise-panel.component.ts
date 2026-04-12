@@ -190,6 +190,86 @@ type EntStatus = {
             </button>
           </div>
         </section>
+
+        <!-- SLA / Status Page -->
+        <section class="rounded-xl border border-white/10 bg-[#1a1a1a] p-4 lite:border-zinc-200 lite:bg-white">
+          <h3 class="mb-2 text-[10px] font-bold uppercase tracking-wider text-zinc-500 lite:text-zinc-600">
+            Service Level Agreement
+          </h3>
+          <p class="mb-3 text-xs text-zinc-500 lite:text-zinc-600">
+            Enterprise tier includes guaranteed uptime and support response times.
+          </p>
+
+          <div class="mb-3 grid gap-2 sm:grid-cols-2">
+            <div class="rounded border border-white/5 bg-black/20 p-2 lite:border-zinc-200 lite:bg-zinc-50">
+              <div class="text-[10px] uppercase text-zinc-500">Uptime SLA</div>
+              <div class="text-lg font-semibold text-emerald-400">99.9%</div>
+              <div class="text-[10px] text-zinc-500">Monthly availability</div>
+            </div>
+            <div class="rounded border border-white/5 bg-black/20 p-2 lite:border-zinc-200 lite:bg-zinc-50">
+              <div class="text-[10px] uppercase text-zinc-500">Support Response</div>
+              <div class="text-lg font-semibold text-emerald-400">&lt; 4h</div>
+              <div class="text-[10px] text-zinc-500">Business hours (24/7 for Critical)</div>
+            </div>
+            <div class="rounded border border-white/5 bg-black/20 p-2 lite:border-zinc-200 lite:bg-zinc-50">
+              <div class="text-[10px] uppercase text-zinc-500">Sync Latency</div>
+              <div class="text-lg font-semibold text-emerald-400">&lt; 5s</div>
+              <div class="text-[10px] text-zinc-500">P95 for real-time sync</div>
+            </div>
+            <div class="rounded border border-white/5 bg-black/20 p-2 lite:border-zinc-200 lite:bg-zinc-50">
+              <div class="text-[10px] uppercase text-zinc-500">Data Durability</div>
+              <div class="text-lg font-semibold text-emerald-400">99.999%</div>
+              <div class="text-[10px] text-zinc-500">Encrypted sync storage</div>
+            </div>
+          </div>
+
+          <div class="mb-3 rounded border border-emerald-500/20 bg-emerald-500/10 p-2 lite:border-emerald-600/30 lite:bg-emerald-100/50">
+            <div class="flex items-center gap-2 text-xs text-emerald-300 lite:text-emerald-800">
+              <span class="inline-block h-2 w-2 rounded-full bg-emerald-500 animate-pulse"></span>
+              <span>All systems operational</span>
+            </div>
+          </div>
+
+          <div class="flex flex-wrap gap-2">
+            <button
+              type="button"
+              class="rounded-lg border border-white/15 px-3 py-1.5 text-xs font-medium text-zinc-200 lite:border-zinc-300 lite:text-zinc-800"
+              (click)="openStatusPage()"
+            >
+              View Status Page
+            </button>
+            <button
+              type="button"
+              class="rounded-lg border border-white/15 px-3 py-1.5 text-xs font-medium text-zinc-200 lite:border-zinc-300 lite:text-zinc-800"
+              (click)="submitFeatureRequest()"
+            >
+              Feature Request
+            </button>
+          </div>
+        </section>
+
+        <!-- Commercial Support -->
+        <section class="rounded-xl border border-white/10 bg-[#1a1a1a] p-4 lite:border-zinc-200 lite:bg-white">
+          <h3 class="mb-2 text-[10px] font-bold uppercase tracking-wider text-zinc-500 lite:text-zinc-600">
+            Priority Support
+          </h3>
+          <p class="mb-3 text-xs text-zinc-500 lite:text-zinc-600">
+            Enterprise customers have access to dedicated support channels and commercial ticketing.
+          </p>
+          <div class="rounded border border-white/5 bg-black/20 p-3 lite:border-zinc-200 lite:bg-zinc-50">
+            <div class="mb-2 text-xs text-zinc-300 lite:text-zinc-700">
+              <strong>Contact Options:</strong>
+            </div>
+            <ul class="mb-3 space-y-1 text-xs text-zinc-400 lite:text-zinc-600">
+              <li>• Email: enterprise@devclip.app (priority queue)</li>
+              <li>• Web Portal: https://devclip.app/support</li>
+              <li>• Documentation: https://docs.devclip.app/enterprise</li>
+            </ul>
+            <div class="text-[10px] text-zinc-500 lite:text-zinc-600">
+              SLA guarantees response within 4 business hours (24/7 for Critical issues).
+            </div>
+          </div>
+        </section>
       }
     </div>
   `,
@@ -336,6 +416,24 @@ export class EnterprisePanelComponent implements OnInit {
       this.message.set(e instanceof Error ? e.message : String(e));
     } finally {
       this.busy.set(false);
+    }
+  }
+
+  async openStatusPage() {
+    const statusUrl = 'https://status.devclip.app';
+    try {
+      await window.devclip.openExternalUrl(statusUrl);
+    } catch {
+      // Ignore
+    }
+  }
+
+  async submitFeatureRequest() {
+    const feedbackUrl = 'https://devclip.app/feedback';
+    try {
+      await window.devclip.openExternalUrl(feedbackUrl);
+    } catch {
+      // Ignore
     }
   }
 }

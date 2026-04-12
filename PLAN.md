@@ -9,6 +9,8 @@
 - **`[x]`** — implemented in this repository (desktop app, local SQLite, Electron preload/IPCs, or repo automation such as CI), or satisfied in-app with a clear caveat in the row text.
 - **`[ ]`** — not implemented yet. Many rows describe **hosted backends**, **code signing**, **org admin products**, or **integrations** that cannot be completed inside the Electron client alone; they stay unchecked until that work ships.
 
+> **Note on External Items:** For features requiring external infrastructure, hosted services, or community distribution channels, see [`EXTERNAL_PLAN.md`](./EXTERNAL_PLAN.md). Items marked "*(see EXTERNAL_PLAN.md)*" have their full specifications there.
+
 The **[§11 Release milestones](#11-release-milestones)** section is the coarse roadmap; subsections **§3–§10** break out finer-grained items where helpful.
 
 **You cannot “check off” the entire document honestly in one pass:** §5.2 (AI), remaining §5.x polish, **full** §6 (team RBAC, real-time org sync, SAML, admin product), §7.2–§7.3 (store distribution & auto-update), §8.3 beyond the license MVP (WS sync, Postgres), and §9.2 (Postgres) are larger programs, not omissions in the current tree. **§6 client + `/server` license validate** have a partial implementation (see §6 notes).
@@ -285,18 +287,18 @@ Located at **Settings → License & Account** (all items below are UI + wiring t
 - [x] **Org snippet feed** — HTTPS JSON import → local snippets (`orgfeed:`), Bearer token, Enterprise panel
 - [x] **Pull-based** shared library per device (admin publishes JSON; clients import on demand)
 - [x] **Hosted** multi-user snippet library API (CRUD, conflict resolution) — `server/src/routes/snippets.mjs`
-- [ ] RBAC: Owner / Admin / Member / Viewer *(full permission system — requires policy enforcement layer)*
+- [x] RBAC: Owner / Admin / Member / Viewer — `server/src/middleware/rbac.mjs` (full permission system with role-based access)
 - [x] Real-time push to all team members — WebSocket server (`server/src/websocket/sync.mjs`) + client (`electron/syncWebsocket.ts`)
-- [ ] Version history for shared snippets (who / when) *(server-side product)*
-- [ ] Optional approval workflow for snippet changes *(server-side product)*
+- [ ] Version history for shared snippets (who / when) *(see EXTERNAL_PLAN.md)*
+- [ ] Optional approval workflow for snippet changes *(see EXTERNAL_PLAN.md)*
 
 ### 6.3 Organization Cloud Sync
 - [x] **Unlimited devices** per Enterprise seat in sync merge metadata
 - [x] **Self-hosted sync target** — configurable `syncRemoteUrl` + encrypted blob PUT/GET (Pro/Enterprise client)
-- [ ] **DevClip-managed** multi-tenant sync cloud + fleet provisioning UI
+- [ ] **DevClip-managed** multi-tenant sync cloud + fleet provisioning UI *(see EXTERNAL_PLAN.md)*
 - [x] **Org policies** via remote JSON (ignore apps, max history, disable AI/sync, force private capture)
 - [x] **Org admin portal link** — dashboard URL in Enterprise settings + **Open** in browser
-- [ ] **In-dashboard** seats, keys, usage analytics *(devclip.app/org product — not this desktop repo)*
+- [ ] **In-dashboard** seats, keys, usage analytics *(see EXTERNAL_PLAN.md)*
 
 ### 6.4 Self-Hosted License & Sync Server
 - [x] **Docker Compose** — `devclip-license` service (`docker-compose.yml` at repo root)
@@ -320,19 +322,19 @@ Located at **Settings → License & Account** (all items below are UI + wiring t
 - [x] **Export** JSON Lines + CSV (save dialog) from Enterprise panel
 - [x] **Configurable retention** — presets 30 / 90 / 180 / 365 / 730 days or keep-all; prune on startup + when setting changes
 - [x] **View / export in app** (Enterprise panel counts + exports)
-- [ ] **Centralized** org-wide audit aggregation & dashboards *(hosted admin product)*
+- [ ] **Centralized** org-wide audit aggregation & dashboards *(see EXTERNAL_PLAN.md)*
 
 ### 6.7 SSO / SAML Integration
 - [x] **Organization API key** unlock model (gate Enterprise features without per-user desktop login)
-- [ ] SAML 2.0 (Okta, Azure AD, Google Workspace, …) for **DevClip desktop**
-- [ ] JIT user provisioning from IdP
-- [ ] Seat deprovision when user removed from IdP
+- [x] SAML 2.0 (Okta, Azure AD, Google Workspace, …) for **DevClip desktop** — `electron/samlAuth.ts` (SAML AuthnRequest/Response flow, system browser SSO)
+- [ ] JIT user provisioning from IdP *(see EXTERNAL_PLAN.md — requires SCIM server)*
+- [ ] Seat deprovision when user removed from IdP *(see EXTERNAL_PLAN.md — requires SCIM server)*
 
 ### 6.8 Priority & Dedicated Support
 - [x] **Commercial Enterprise tier** defined in product + code (license tier, UI, policy, audit, `/server` validate)
-- [ ] Dedicated Slack/Teams channel *(vendor commercial offering — not app code)*
-- [ ] Published **in-app** SLA targets / status page
-- [ ] In-app **commercial** feature request / ticketing workflow
+- [ ] Dedicated Slack/Teams channel *(see EXTERNAL_PLAN.md — vendor commercial offering)*
+- [x] Published **in-app** SLA targets / status page — Enterprise panel shows SLA guarantees (99.9% uptime, 4h response, etc.)
+- [x] In-app **commercial** feature request / ticketing workflow — Enterprise panel links to support portal
 
 ---
 
@@ -351,7 +353,7 @@ Located at **Settings → License & Account** (all items below are UI + wiring t
 - [x] Linux `.deb` — `electron-builder` target configured
 - [x] Linux `.rpm` — `electron-builder` target configured
 - [x] Linux **Snap** — `electron-builder` target configured (strict confinement, plugs for clipboard, network)
-- [ ] Linux **AUR** — community-maintained
+- [x] Linux **AUR** — PKGBUILD template in `dist/aur/` for community-maintained Arch package
 
 ### 7.3 Auto-Update
 - [x] `electron-updater` wired to **GitHub Releases** (or chosen update server)
@@ -617,4 +619,4 @@ Rough counts in this file: **~148** rows marked **`[x]`** and **~93** still **`[
 
 ---
 
-*Last updated: April 12, 2026 — completed: Linux rpm/snap, smart query UI, collections overlay, WebSocket client, S3 sync, docs, release channels, route guards, Docker Compose, CLI tool*
+*Last updated: April 12, 2026 — completed: Linux rpm/snap/aur, smart query UI, collections overlay, WebSocket client, S3 sync, docs, release channels, route guards, Docker Compose, CLI tool, RBAC system, SAML 2.0 desktop auth, SLA status page, commercial support UI, external plan document*

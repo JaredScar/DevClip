@@ -1,66 +1,39 @@
 import { pool } from '../db.mjs';
-import { createHash, createHmac, randomBytes } from 'crypto';
+import { createHmac, randomBytes } from 'crypto';
+import {
+  loadOrgMembership,
+  requirePermission,
+  requireOwnership,
+  hasPermission,
+  rbacAuditLog,
+  ROLES,
+} from '../middleware/rbac.mjs';
 
 /**
  * Enterprise Snippet Library API Routes
  * 
  * Provides CRUD operations for organization-wide shared snippets.
  * All snippets are E2E encrypted (ciphertext only visible to server).
+ * RBAC (Role-Based Access Control) enforced for all operations.
  */
 
 const AUDIT_SECRET = process.env.AUDIT_SECRET || 'devclip-secret';
 
-// Simple auth middleware for routes
-async function authenticate(request, reply) {
-  const auth = request.headers.authorization;
-  if (!auth?.startsWith('Bearer ')) {
-    return reply.code(401).send({ error: 'Unauthorized' });
-  }
-
-  const apiKey = auth.slice(7);
-  
-  // Validate API key
-  const keyHash = createHash('sha256').update(apiKey).digest('hex');
-  
+// Audit log helper
+async function auditLog(eventType, orgId, userId, resourceType, resourceId, payload) {
   try {
-    const { rows } = await pool.query(
-      `SELECT ak.id, ak.org_id, ak.user_id, ak.scopes,
-              o.tier as org_tier, o.name as org_name
-       FROM api_keys ak
-       LEFT JOIN organizations o ON o.id = ak.org_id
-       WHERE ak.key_hash = $1 AND ak.is_active = true
-         AND (ak.expires_at IS NULL OR ak.expires_at > NOW())`,
-      [keyHash]
-    );
+    const signature = createHmac('sha256', AUDIT_SECRET)
+      .update(`${orgId}:${userId}:${eventType}:${Date.now()}`)
+      .digest('hex');
 
-    if (rows.length === 0) {
-      return reply.code(401).send({ error: 'Invalid API key' });
-    }
-
-    const key = rows[0];
-    
-    // Update last used
     await pool.query(
-      'UPDATE api_keys SET last_used_at = NOW(), usage_count = usage_count + 1 WHERE id = $1',
-      [key.id]
+      `INSERT INTO audit_log (org_id, user_id, event_type, resource_type, resource_id, payload, signature, entry_hash)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
+      [orgId, userId, eventType, resourceType, resourceId, JSON.stringify(payload), signature, randomBytes(32).toString('hex')]
     );
-
-    // Attach user info to request
-    request.user = {
-      id: key.user_id,
-      orgId: key.org_id,
-      tier: key.org_tier,
-      scopes: key.scopes,
-    };
   } catch (err) {
-    console.error('[Snippets] Auth error:', err);
-    return reply.code(500).send({ error: 'Authentication failed' });
+    console.error('[Audit] Failed to log:', err);
   }
-}
-
-// Check if user has required scope
-function hasScope(request, scope) {
-  return request.user?.scopes?.includes(scope) || request.user?.scopes?.includes('admin');
 }
 
 // Audit log helper
@@ -81,11 +54,20 @@ async function auditLog(eventType, orgId, userId, resourceType, resourceId, payl
 }
 
 export default async function snippetRoutes(fastify) {
-  // Pre-hook for authentication
-  fastify.addHook('preHandler', authenticate);
+  // Pre-hooks: authenticate, then load org membership with RBAC role
+  fastify.addHook('preHandler', async (request, reply) => {
+    // Authentication is handled globally in main server
+    // Here we just ensure user is loaded and load org membership
+    if (!request.user) {
+      return reply.code(401).send({ error: 'Not authenticated' });
+    }
+    await loadOrgMembership(request, reply);
+  });
 
-  // GET /api/v1/org/snippets - List shared snippets
-  fastify.get('/', async (request, reply) => {
+  // GET /api/v1/org/snippets - List shared snippets (viewer+, member+, admin+, owner+)
+  fastify.get('/', {
+    preHandler: requirePermission('snippets:read'),
+  }, async (request, reply) => {
     const { orgId } = request.user;
     const { tag, type, limit = 50, offset = 0 } = request.query;
 
@@ -128,8 +110,10 @@ export default async function snippetRoutes(fastify) {
     }
   });
 
-  // GET /api/v1/org/snippets/:id - Get a specific snippet
-  fastify.get('/:id', async (request, reply) => {
+  // GET /api/v1/org/snippets/:id - Get a specific snippet (viewer+, member+, admin+, owner+)
+  fastify.get('/:id', {
+    preHandler: requirePermission('snippets:read'),
+  }, async (request, reply) => {
     const { orgId } = request.user;
     const { id } = request.params;
 
@@ -153,13 +137,11 @@ export default async function snippetRoutes(fastify) {
     }
   });
 
-  // POST /api/v1/org/snippets - Create a shared snippet
-  fastify.post('/', async (request, reply) => {
+  // POST /api/v1/org/snippets - Create a shared snippet (member+, admin+, owner+)
+  fastify.post('/', {
+    preHandler: requirePermission('snippets:create'),
+  }, async (request, reply) => {
     const { orgId, id: userId } = request.user;
-    
-    if (!hasScope(request, 'snippets:write')) {
-      return reply.code(403).send({ error: 'Insufficient permissions' });
-    }
 
     const {
       ciphertext,
@@ -185,7 +167,7 @@ export default async function snippetRoutes(fastify) {
         [orgId, userId, ciphertext, JSON.stringify(cipher_meta), snippet_type, language, title_hint, tags, syncUid]
       );
 
-      await auditLog('snippet_created', orgId, userId, 'snippet', rows[0].id, { type: snippet_type });
+      await rbacAuditLog('snippet_created', request, 'snippet', rows[0].id, { type: snippet_type });
 
       // Notify other org members via WebSocket
       if (fastify.wss) {
@@ -205,13 +187,20 @@ export default async function snippetRoutes(fastify) {
     }
   });
 
-  // PUT /api/v1/org/snippets/:id - Update a snippet
-  fastify.put('/:id', async (request, reply) => {
+  // PUT /api/v1/org/snippets/:id - Update a snippet (own update for member, any for admin+)
+  fastify.put('/:id', {
+    preHandler: [
+      requirePermission('snippets:update'),
+      requireOwnership('snippet', 'id'),
+    ],
+  }, async (request, reply) => {
     const { orgId, id: userId } = request.user;
     const { id } = request.params;
 
-    if (!hasScope(request, 'snippets:write')) {
-      return reply.code(403).send({ error: 'Insufficient permissions' });
+    // Check if user can update others' snippets
+    const canUpdateAny = hasPermission(request.userRole, 'snippets:admin');
+    if (!canUpdateAny && !request.isResourceOwner) {
+      return reply.code(403).send({ error: 'Can only update your own snippets' });
     }
 
     const updates = request.body || {};
@@ -234,16 +223,6 @@ export default async function snippetRoutes(fastify) {
     }
 
     try {
-      // Check ownership
-      const { rows: existing } = await pool.query(
-        'SELECT id FROM encrypted_snippets WHERE id = $1 AND org_id = $2 AND deleted_at IS NULL',
-        [id, orgId]
-      );
-
-      if (existing.length === 0) {
-        return reply.code(404).send({ error: 'Snippet not found' });
-      }
-
       fields.push(`updated_at = NOW()`);
       values.push(id, orgId);
 
@@ -255,7 +234,7 @@ export default async function snippetRoutes(fastify) {
         values
       );
 
-      await auditLog('snippet_updated', orgId, userId, 'snippet', id, { fields: Object.keys(updates) });
+      await rbacAuditLog('snippet_updated', request, 'snippet', id, { fields: Object.keys(updates) });
 
       // Notify org members
       if (fastify.wss) {
@@ -269,13 +248,20 @@ export default async function snippetRoutes(fastify) {
     }
   });
 
-  // DELETE /api/v1/org/snippets/:id - Delete a snippet (soft delete)
-  fastify.delete('/:id', async (request, reply) => {
+  // DELETE /api/v1/org/snippets/:id - Delete a snippet (soft delete) (own for member, any for admin+)
+  fastify.delete('/:id', {
+    preHandler: [
+      requirePermission('snippets:delete'),
+      requireOwnership('snippet', 'id'),
+    ],
+  }, async (request, reply) => {
     const { orgId, id: userId } = request.user;
     const { id } = request.params;
 
-    if (!hasScope(request, 'snippets:delete')) {
-      return reply.code(403).send({ error: 'Insufficient permissions' });
+    // Check if user can delete others' snippets
+    const canDeleteAny = hasPermission(request.userRole, 'snippets:admin');
+    if (!canDeleteAny && !request.isResourceOwner) {
+      return reply.code(403).send({ error: 'Can only delete your own snippets' });
     }
 
     try {
@@ -291,7 +277,7 @@ export default async function snippetRoutes(fastify) {
         return reply.code(404).send({ error: 'Snippet not found' });
       }
 
-      await auditLog('snippet_deleted', orgId, userId, 'snippet', id, {});
+      await rbacAuditLog('snippet_deleted', request, 'snippet', id, {});
 
       // Notify org members
       if (fastify.wss) {
@@ -305,8 +291,10 @@ export default async function snippetRoutes(fastify) {
     }
   });
 
-  // GET /api/v1/org/snippets/tags - List all tags in org
-  fastify.get('/tags/list', async (request, reply) => {
+  // GET /api/v1/org/snippets/tags - List all tags in org (viewer+)
+  fastify.get('/tags/list', {
+    preHandler: requirePermission('snippets:read'),
+  }, async (request, reply) => {
     const { orgId } = request.user;
 
     try {
