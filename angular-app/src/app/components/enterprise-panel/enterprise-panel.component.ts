@@ -19,6 +19,14 @@ type EntStatus = {
   policySignatureValid: boolean;
 };
 
+type CloudAnalytics = {
+  ok: boolean;
+  data?: {
+    seat_utilization?: { used: number; seats: number; utilization_ratio: number };
+    usage_analytics?: { audit_events_7d: number; bundles_uploaded_7d: number };
+  };
+};
+
 @Component({
   selector: 'app-enterprise-panel',
   standalone: true,
@@ -191,6 +199,56 @@ type EntStatus = {
           </div>
         </section>
 
+        <!-- Cloud seats & usage -->
+        <section class="rounded-xl border border-white/10 bg-[#1a1a1a] p-4 lite:border-zinc-200 lite:bg-white">
+          <h3 class="mb-2 text-[10px] font-bold uppercase tracking-wider text-zinc-500 lite:text-zinc-600">
+            Cloud usage (from sync admin)
+          </h3>
+          <p class="mb-3 text-xs text-zinc-500 lite:text-zinc-600">
+            Real-time seat utilization and usage analytics (requires syncRemoteUrl set in Sync settings).
+          </p>
+
+          @if (cloudBusy()) {
+            <p class="text-xs text-zinc-400">Loading…</p>
+          } @else {
+            <div class="mb-3 grid gap-2 sm:grid-cols-2">
+              <div class="rounded border border-white/5 bg-black/20 p-2 lite:border-zinc-200 lite:bg-zinc-50">
+                <div class="text-[10px] uppercase text-zinc-500">Seats used</div>
+                <div class="text-lg font-semibold text-emerald-400">{{ cloudAnalytics()?.data?.seat_utilization?.used ?? '—' }}</div>
+                <div class="text-[10px] text-zinc-500">Total seats</div>
+              </div>
+              <div class="rounded border border-white/5 bg-black/20 p-2 lite:border-zinc-200 lite:bg-zinc-50">
+                <div class="text-[10px] uppercase text-zinc-500">Utilization</div>
+                <div class="text-lg font-semibold text-emerald-400">
+                  {{ (cloudAnalytics()?.data?.seat_utilization?.utilization_ratio ?? 0) | number: '1.2-2' }}
+                </div>
+                <div class="text-[10px] text-zinc-500">Used / Seats ratio</div>
+              </div>
+              <div class="rounded border border-white/5 bg-black/20 p-2 lite:border-zinc-200 lite:bg-zinc-50">
+                <div class="text-[10px] uppercase text-zinc-500">Audit events (7d)</div>
+                <div class="text-lg font-semibold text-devclip-accent">{{ cloudAnalytics()?.data?.usage_analytics?.audit_events_7d ?? '—' }}</div>
+                <div class="text-[10px] text-zinc-500">Ingested centrally</div>
+              </div>
+              <div class="rounded border border-white/5 bg-black/20 p-2 lite:border-zinc-200 lite:bg-zinc-50">
+                <div class="text-[10px] uppercase text-zinc-500">Bundles uploaded (7d)</div>
+                <div class="text-lg font-semibold text-devclip-accent">{{ cloudAnalytics()?.data?.usage_analytics?.bundles_uploaded_7d ?? '—' }}</div>
+                <div class="text-[10px] text-zinc-500">Per org devices</div>
+              </div>
+            </div>
+          }
+
+          <div class="flex flex-wrap gap-2">
+            <button
+              type="button"
+              class="rounded-lg border border-white/15 px-3 py-1.5 text-xs font-medium text-zinc-200 lite:border-zinc-300 lite:text-zinc-800"
+              [disabled]="busy() || cloudBusy()"
+              (click)="refreshCloudAnalytics()"
+            >
+              Refresh cloud usage
+            </button>
+          </div>
+        </section>
+
         <!-- SLA / Status Page -->
         <section class="rounded-xl border border-white/10 bg-[#1a1a1a] p-4 lite:border-zinc-200 lite:bg-white">
           <h3 class="mb-2 text-[10px] font-bold uppercase tracking-wider text-zinc-500 lite:text-zinc-600">
@@ -261,7 +319,7 @@ type EntStatus = {
               <strong>Contact Options:</strong>
             </div>
             <ul class="mb-3 space-y-1 text-xs text-zinc-400 lite:text-zinc-600">
-              <li>• Email: enterprise@devclip.app (priority queue)</li>
+              <li>• Email: enterprise&#64;devclip.app (priority queue)</li>
               <li>• Web Portal: https://devclip.app/support</li>
               <li>• Documentation: https://docs.devclip.app/enterprise</li>
             </ul>
@@ -287,6 +345,9 @@ export class EnterprisePanelComponent implements OnInit {
   tokenInput = '';
   auditRetentionDays = '0';
 
+  cloudAnalytics = signal<CloudAnalytics | null>(null);
+  cloudBusy = signal(false);
+
   async ngOnInit() {
     await this.reload();
   }
@@ -301,9 +362,23 @@ export class EnterprisePanelComponent implements OnInit {
         this.snippetsFeedUrl = s.snippetsFeedUrl;
         this.auditRetentionDays = s.auditRetentionDays || '0';
         this.tokenInput = '';
+        await this.refreshCloudAnalytics();
       }
     } catch {
       this.status.set(null);
+    }
+  }
+
+  async refreshCloudAnalytics() {
+    this.cloudBusy.set(true);
+    try {
+      const r = (await window.devclip.enterpriseGetCloudAnalytics()) as any;
+      this.cloudAnalytics.set(r);
+    } catch (e) {
+      this.cloudAnalytics.set(null);
+      this.message.set(e instanceof Error ? e.message : String(e));
+    } finally {
+      this.cloudBusy.set(false);
     }
   }
 

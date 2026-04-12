@@ -233,6 +233,11 @@ const api = {
     ipcRenderer.invoke('enterprise:fetchPolicy') as Promise<
       { ok: true } | { ok: false; error: string }
     >,
+  enterpriseGetCloudAnalytics: () =>
+    ipcRenderer.invoke('enterprise:getCloudAnalytics') as Promise<
+      | { ok: true; data: unknown }
+      | { ok: false; error: string }
+    >,
   enterpriseImportOrgSnippets: () =>
     ipcRenderer.invoke('enterprise:importOrgSnippets') as Promise<
       | { ok: true; imported: number; errors: string[] }

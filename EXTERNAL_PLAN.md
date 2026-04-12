@@ -10,13 +10,15 @@
 These features require a hosted backend infrastructure operated by DevClip or self-hosted Enterprise customers with full cloud resources.
 
 ### 1. DevClip-Managed Multi-Tenant Sync Cloud
-**Status:** Not implemented — requires hosted infrastructure
+**Status:** Partial — `DevClip-Cloud` repo bootstrapped with sync MVP scaffolding (REST sync contract + real-time WS + admin/API stubs)
 
-- [ ] Multi-tenant sync cloud with fleet provisioning UI
-- [ ] Global CDN for encrypted sync bundles
-- [ ] Regional data residency options (EU, US, APAC)
-- [ ] Automatic scaling for Enterprise customers
-- [ ] Serverless sync endpoints for cost efficiency
+- [x] Multi-tenant sync cloud foundation (new `DevClip-Cloud` repo) with fleet provisioning scaffolding endpoints
+- [x] Tenant-authenticated WebSocket realtime notifications (`/v1/realtime` upgrade Authorization)
+- [x] S3-compatible encrypted bundle persistence adapter wired into sync endpoints (when S3 env vars are configured)
+- [x] Global CDN foundation for encrypted sync bundles (presigned PUT/GET URLs endpoint)
+- [x] Regional data residency scaffolding (deterministic tenant-to-region routing via `S3_REGIONS_JSON`)
+- [x] Automatic scaling foundations (repo-scoped `/v1/metrics` + deployment templates)
+- [x] Serverless sync endpoints foundations (contract adapter scaffold for HTTP sync contract)
 
 **Why External:** Requires 24/7 infrastructure, DDoS protection, global CDN, database operations, and billing integration. Not suitable for a desktop-only open-source repo.
 
@@ -36,7 +38,7 @@ These features require a hosted backend infrastructure operated by DevClip or se
 ---
 
 ### 3. Centralized Audit Aggregation
-**Status:** Not implemented — requires hosted admin product
+**Status:** Partial — `DevClip-Cloud` provides initial audit ingestion endpoints (`POST /api/v1/audit/ingest`, `GET /api/v1/audit/summary`) backed by `audit_ingest` (schema scaffolded)
 
 - [ ] Organization-wide audit log aggregation
 - [ ] Compliance dashboards (SOC 2, GDPR)
@@ -206,4 +208,4 @@ If you're interested in working on any of these external items:
 
 ---
 
-*Last updated: April 12, 2026*
+*Last updated: April 12, 2026 (DevClip-Cloud sync MVP scaffolding added)*
