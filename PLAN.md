@@ -537,20 +537,20 @@ Target mitigations vs repo today:
 
 ### v1.2 — Enterprise Tier
 - [x] Organization API keys + admin dashboard (`/server` license API with Postgres)
-- [ ] Team shared collections + RBAC *(requires full org backend implementation)*
+- [x] Team shared collections + RBAC — `server/src/middleware/rbac.mjs` + snippet routes with role-based permissions
 - [x] Organization cloud sync (unlimited devices — client supports unlimited; server schema ready)
 - [x] Self-hosted license + sync server (Docker Compose with PostgreSQL)
 - [x] Centralized policy management (policy fetch, signature verify, enforcement)
 - [x] Audit log (local + server HMAC-signed)
-- [ ] SSO / SAML *(SAML integration for desktop app)*
+- [x] SSO / SAML — `electron/samlAuth.ts` (SAML 2.0 desktop integration with system browser flow)
 
 ### v1.3+ — Ecosystem
-- [x] Linux support (`.AppImage`, `.deb` via electron-builder)
-- [ ] Linux `.rpm` / Snap / AUR *(pending demand)*
-- [ ] Mobile companion app (iOS/Android — read-only sync viewer)
-- [ ] Browser extension (Chrome/Firefox — capture without switching apps)
+- [x] Linux support (`.AppImage`, `.deb`, `.rpm`, `.snap` via electron-builder)
+- [x] Linux **AUR** — PKGBUILD template in `dist/aur/` for Arch Linux
+- [ ] Mobile companion app (iOS/Android — read-only sync viewer) *(see EXTERNAL_PLAN.md — separate product)*
+- [ ] Browser extension (Chrome/Firefox — capture without switching apps) *(see EXTERNAL_PLAN.md — separate product)*
 - [x] CLI tool (`cli/` package — `devclip search`, `paste`, `snippet`, `snippets`, `history`, `config`)
-- [ ] Plugin/extension API (community-built actions and integrations)
+- [ ] Plugin/extension API (community-built actions and integrations) *(see EXTERNAL_PLAN.md — ecosystem project)*
 
 ---
 
