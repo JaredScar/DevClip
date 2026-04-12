@@ -11,3 +11,10 @@ extraResources:
     to: schema.sql
 win:
   target: nsis
+  icon: devclip_icon_transparent.png
+
+mac:
+  icon: devclip_icon_transparent.png
+
+linux:
+  icon: devclip_icon_transparent.png

@@ -87,7 +87,7 @@
           ]
         }
       ],
-      "icon": "angular-app/public/devclip_icon_transparent.svg"
+      "icon": "devclip_icon_transparent.png"
     },
     "nsis": {
       "oneClick": true,
@@ -111,7 +111,7 @@
           ]
         }
       ],
-      "icon": "angular-app/public/devclip_icon_transparent.svg",
+      "icon": "devclip_icon_transparent.png",
       "category": "public.app-category.productivity",
       "hardenedRuntime": true,
       "gatekeeperAssess": false,
@@ -160,7 +160,7 @@
           ]
         }
       ],
-      "icon": "angular-app/public/devclip_icon_transparent.svg",
+      "icon": "devclip_icon_transparent.png",
       "category": "Utility",
       "maintainer": "DevClip contributors",
       "vendor": "DevClip",
