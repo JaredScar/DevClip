@@ -35,6 +35,14 @@ import {
   updateAutomationRule,
 } from '../database/automation';
 import { getLicenseCacheRow } from '../database/licenseCache';
+import {
+  getBiometricCapabilities,
+  promptBiometricAuth,
+  registerBiometricForVault,
+  unregisterBiometric,
+  isBiometricEnabled,
+  getBiometricSetupInstructions,
+} from './biometricAuth';
 import { getInsightsSummary } from '../database/insights';
 import {
   deleteSnippet,
@@ -742,4 +750,35 @@ export function registerIpcHandlers(
   });
 
   ipcMain.handle('app:getVersion', () => app.getVersion());
+
+  // Biometric authentication for vault
+  ipcMain.handle('biometric:getCapabilities', () => getBiometricCapabilities());
+
+  ipcMain.handle('biometric:getSetupInstructions', () => getBiometricSetupInstructions());
+
+  ipcMain.handle('biometric:isEnabled', () => isBiometricEnabled());
+
+  ipcMain.handle('biometric:prompt', (_e, reason: string) =>
+    promptBiometricAuth({ reason: String(reason ?? 'Unlock vault') })
+  );
+
+  ipcMain.handle('biometric:registerForVault', async () => {
+    const result = await registerBiometricForVault();
+    if (result.success) {
+      setSetting('vaultBiometricEnabled', '1');
+      setSetting('vaultBiometricKeyId', result.keyId ?? '');
+      appendAuditEvent({ category: 'vault', action: 'biometric_registered' });
+    }
+    return result;
+  });
+
+  ipcMain.handle('biometric:unregister', async (_e, keyId: string) => {
+    const result = await unregisterBiometric(String(keyId ?? ''));
+    if (result) {
+      setSetting('vaultBiometricEnabled', '0');
+      setSetting('vaultBiometricKeyId', '');
+      appendAuditEvent({ category: 'vault', action: 'biometric_unregistered' });
+    }
+    return { ok: result };
+  });
 }

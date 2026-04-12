@@ -284,8 +284,8 @@ Located at **Settings → License & Account** (all items below are UI + wiring t
 ### 6.2 Team Shared Collections
 - [x] **Org snippet feed** — HTTPS JSON import → local snippets (`orgfeed:`), Bearer token, Enterprise panel
 - [x] **Pull-based** shared library per device (admin publishes JSON; clients import on demand)
-- [ ] **Hosted** multi-user snippet library API (CRUD, conflict resolution) in this repo
-- [ ] RBAC: Owner / Admin / Member / Viewer *(requires org backend)*
+- [x] **Hosted** multi-user snippet library API (CRUD, conflict resolution) — `server/src/routes/snippets.mjs`
+- [ ] RBAC: Owner / Admin / Member / Viewer *(full permission system — requires policy enforcement layer)*
 - [ ] Real-time push to all team members *(WebSocket / org server — §8.3)*
 - [ ] Version history for shared snippets (who / when) *(server-side product)*
 - [ ] Optional approval workflow for snippet changes *(server-side product)*
@@ -372,6 +372,8 @@ Located at **Settings → License & Account** (all items below are UI + wiring t
 | Persistence | SQLite via `better-sqlite3` |
 | Syntax highlighting | Shiki |
 | Packaging | `electron-builder` |
+| CLI | Node.js + Commander.js + `better-sqlite3` |
+| WebSocket | `ws` library for real-time sync |
 
 ### 8.2 Additions for Pro/Enterprise
 
@@ -397,7 +399,7 @@ Lightweight Node.js (Fastify) service under `/server`. **Repo state:** license v
 
 - [x] Create `/server` package (Fastify app, env config)
 - [x] `POST /api/v1/license/validate` (prefix keys `dc_pro_` / `dc_ent_` + optional `DEVCLIP_EXTRA_*_KEYS`)
-- [ ] WebSocket sync endpoint + auth *(real-time push — WebSocket implementation)*
+- [x] WebSocket sync endpoint + auth (`server/src/websocket/sync.mjs` — real-time notifications, auth, channels)
 - [x] Postgres schema + queries (`server/database/schema.sql`)
 - [x] Key generation / verification helpers (`server/src/utils/license.mjs` — RSA key gen, JWT sign/verify)
 - [x] `Dockerfile` + repo-root `docker-compose.yml` (full stack: PostgreSQL + license/sync server)
@@ -484,7 +486,7 @@ Target mitigations vs repo today:
 
 - [x] **API keys** — license key in Electron **`safeStorage`** when the OS supports it (Keychain / DPAPI / etc.); optional `.license-key.plain` fallback — **not** stored in SQLite
 - [x] **Sync payload** — XChaCha20-Poly1305 (libsodium) with Argon2id key derivation; backward compatible with AES-256-GCM v1
-- [x] **Vault** — AES-256-GCM with scrypt key derivation; PIN unlock shipped; biometric unlock TBD
+- [x] **Vault** — AES-256-GCM with scrypt key derivation; PIN unlock + biometric unlock interface (`electron/biometricAuth.ts` — Touch ID, Windows Hello, Linux fprintd)
 - [x] **Context isolation** — Electron `contextIsolation: true`, `nodeIntegration: false`
 - [x] **CSP** — Content-Security-Policy applied via `session.defaultSession.webRequest` (tune as needed for dev vs prod)
 - [x] **Secret detection** — regex heuristics for common token patterns (`secret` clip type, etc.)
@@ -544,7 +546,7 @@ Target mitigations vs repo today:
 - [ ] Linux `.rpm` / Snap / AUR *(pending demand)*
 - [ ] Mobile companion app (iOS/Android — read-only sync viewer)
 - [ ] Browser extension (Chrome/Firefox — capture without switching apps)
-- [ ] CLI tool (`devclip search`, `devclip paste <id>`, `devclip snippet run <name>`)
+- [x] CLI tool (`cli/` package — `devclip search`, `paste`, `snippet`, `snippets`, `history`, `config`)
 - [ ] Plugin/extension API (community-built actions and integrations)
 
 ---
@@ -573,6 +575,9 @@ devclip/
 │   ├── src/
 │   ├── Dockerfile
 │   └── docker-compose.yml
+├── cli/                # Command-line interface
+│   ├── src/
+│   └── package.json
 ├── docs/               # Architecture diagrams, API reference
 ├── .github/
 │   ├── ISSUE_TEMPLATE/
@@ -594,6 +599,7 @@ devclip/
 - [x] `.github/PULL_REQUEST_TEMPLATE.md`
 - [x] `.github/workflows/` — CI runs `npm ci` + `npm run build:all` on Windows, macOS, Linux matrix; lint, type-check, server validation, security audit
 - [x] `docs/` — Architecture overview, API reference (license, sync), development guides
+- [x] `cli/` — Command-line interface (`search`, `paste`, `snippet`, `history`, `config`)
 
 ### Community
 - GitHub Issues for bug reports and feature requests
@@ -610,4 +616,4 @@ Rough counts in this file: **~148** rows marked **`[x]`** and **~93** still **`[
 
 ---
 
-*Last updated: April 12, 2026 — completed items: docs, release channels, route guards, full Docker Compose stack*
+*Last updated: April 12, 2026 — completed: WebSocket sync, snippet API, biometric unlock, CLI tool, docs, release channels, route guards, Docker Compose*

@@ -268,6 +268,17 @@ export interface DevClipApi {
   updaterSetChannel: (channel: 'stable' | 'beta' | 'nightly') => Promise<{ ok: boolean; channel: string }>;
   updaterGetChannel: () => Promise<'stable' | 'beta' | 'nightly'>;
   onUpdaterStatus: (callback: (status: Record<string, unknown>) => void) => () => void;
+  // Biometric authentication
+  biometricGetCapabilities: () => Promise<{
+    available: boolean;
+    type: 'touchId' | 'faceId' | 'windowsHello' | 'fingerprint' | 'none';
+    enrolled: boolean;
+  }>;
+  biometricGetSetupInstructions: () => Promise<string>;
+  biometricIsEnabled: () => Promise<boolean>;
+  biometricPrompt: (reason: string) => Promise<{ success: boolean; error?: string }>;
+  biometricRegisterForVault: () => Promise<{ success: boolean; keyId?: string; error?: string }>;
+  biometricUnregister: (keyId: string) => Promise<{ ok: boolean }>;
 }
 
 declare global {

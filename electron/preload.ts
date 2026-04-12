@@ -264,6 +264,26 @@ const api = {
     ipcRenderer.on('updater:status', handler);
     return () => ipcRenderer.removeListener('updater:status', handler);
   },
+  // Biometric authentication
+  biometricGetCapabilities: () =>
+    ipcRenderer.invoke('biometric:getCapabilities') as Promise<{
+      available: boolean;
+      type: 'touchId' | 'faceId' | 'windowsHello' | 'fingerprint' | 'none';
+      enrolled: boolean;
+    }>,
+  biometricGetSetupInstructions: () =>
+    ipcRenderer.invoke('biometric:getSetupInstructions') as Promise<string>,
+  biometricIsEnabled: () => ipcRenderer.invoke('biometric:isEnabled') as Promise<boolean>,
+  biometricPrompt: (reason: string) =>
+    ipcRenderer.invoke('biometric:prompt', reason) as Promise<{ success: boolean; error?: string }>,
+  biometricRegisterForVault: () =>
+    ipcRenderer.invoke('biometric:registerForVault') as Promise<{
+      success: boolean;
+      keyId?: string;
+      error?: string;
+    }>,
+  biometricUnregister: (keyId: string) =>
+    ipcRenderer.invoke('biometric:unregister', keyId) as Promise<{ ok: boolean }>,
 };
 
 contextBridge.exposeInMainWorld('devclip', api);

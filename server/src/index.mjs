@@ -1,4 +1,5 @@
 import Fastify from 'fastify';
+import SyncWebSocketServer from './websocket/sync.mjs';
 
 const fastify = Fastify({ logger: true });
 
@@ -70,10 +71,56 @@ fastify.get('/health', async () => {
     }
   }
 
+  // WebSocket stats
+  if (fastify.wss) {
+    health.websocket = fastify.wss.getStats();
+  }
+
   return health;
 });
+
+// Sync bundle endpoints (for REST-based sync)
+fastify.get('/api/v1/sync/bundle', async (request, reply) => {
+  const auth = request.headers.authorization;
+  if (!auth?.startsWith('Bearer ')) {
+    return reply.code(401).send({ error: 'Unauthorized' });
+  }
+  
+  // For now, return placeholder (full implementation would query encrypted_clips, etc.)
+  return {
+    has_changes: false,
+    message: 'Sync endpoint ready. Encrypted blob retrieval not yet implemented.',
+  };
+});
+
+// Notify other devices about sync (triggered by sync bundle upload)
+fastify.post('/api/v1/sync/notify', async (request, reply) => {
+  const auth = request.headers.authorization;
+  if (!auth?.startsWith('Bearer ')) {
+    return reply.code(401).send({ error: 'Unauthorized' });
+  }
+  
+  const { channel, cursor } = request.body || {};
+  
+  // Extract user info from auth (simplified - would validate token in production)
+  // For now, just log that notification would be sent
+  console.log(`[Sync] Notification on channel ${channel} with cursor`, cursor);
+  
+  return { notified: true, channel };
+});
+
+// Register snippet library routes
+const { default: snippetRoutes } = await import('./routes/snippets.mjs');
+await fastify.register(snippetRoutes, { prefix: '/api/v1/org/snippets' });
 
 const port = Number(process.env.PORT) || 8787;
 const host = process.env.HOST || '0.0.0.0';
 
 await fastify.listen({ port, host });
+
+// Initialize WebSocket sync server
+const wss = new SyncWebSocketServer(fastify.server);
+console.log('[Server] WebSocket sync server initialized at /v1/realtime');
+
+// Expose WebSocket server for use in routes
+fastify.decorate('wss', wss);
