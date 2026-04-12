@@ -29,9 +29,9 @@ These features require a hosted backend infrastructure operated by DevClip or se
 
 - [x] Real-time seat utilization dashboard (repo-scoped metrics + Enterprise panel UI)
 - [x] Usage analytics scaffolding (audit_events_7d + bundles_uploaded_7d)
-- [ ] Billing management UI
-- [ ] Invoice and payment history
-- [ ] Team member activity timeline
+- [x] Billing management UI *(repo-scoped billing snapshot + Enterprise panel scaffold)*
+- [x] Invoice and payment history *(repo-scoped invoices endpoint + Enterprise panel scaffold)*
+- [x] Team member activity timeline *(repo-scoped team activity endpoint + Enterprise panel scaffold)*
 
 **Why External:** Requires secure aggregation of customer data, billing system integration, and a web-based admin interface separate from the desktop app.
 
