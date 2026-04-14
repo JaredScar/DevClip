@@ -1,8 +1,6 @@
 appId: com.devclip.app
 productName: DevClip
 directories:
-  # Make app directory explicit so electron-builder doesn't mis-resolve projectDir/appDir paths.
-  app: .
   output: release
   buildResources: build
 files:

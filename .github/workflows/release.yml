@@ -100,7 +100,7 @@ jobs:
         run: npm run build:all
 
       - name: Package for macOS
-        run: npx electron-builder --config electron-builder.yml --projectDir . --appDir . --mac --publish never
+        run: npx electron-builder --mac --publish never
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           APPLE_ID: ${{ secrets.APPLE_ID }}
