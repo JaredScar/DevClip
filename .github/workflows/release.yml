@@ -80,6 +80,9 @@ jobs:
     name: Build macOS
     needs: version
     runs-on: macos-latest
+    env:
+      # Unsigned CI builds should not try to discover signing identities.
+      CSC_IDENTITY_AUTO_DISCOVERY: 'false'
     steps:
       - uses: actions/checkout@v4
 
@@ -100,7 +103,7 @@ jobs:
         run: npm run build:all
 
       - name: Package for macOS
-        run: npx electron-builder --mac --publish never
+        run: npx electron-builder --mac dmg --x64 --arm64 --publish never
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           # Provide empty defaults when signing secrets are not configured.
