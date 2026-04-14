@@ -1,6 +1,6 @@
 import { createHash } from 'crypto';
 import { existsSync } from 'fs';
-import { app, BrowserWindow, clipboard, dialog, globalShortcut, screen, session } from 'electron';
+import { app, BrowserWindow, clipboard, dialog, globalShortcut, net, protocol, screen, session } from 'electron';
 import * as path from 'path';
 import { setupAutoUpdater, checkForUpdatesOnStartup } from './autoUpdater';
 import { getSourceLabelSync } from './sourceApp';
@@ -29,6 +29,25 @@ import { processSyncOutbox } from './syncOps';
 const isDev = process.env.DEVCLIP_DEV === '1';
 
 const projectRoot = path.join(__dirname, '..', '..');
+
+// Angular production build output directory.
+const angularDistPath = path.join(projectRoot, 'angular-app', 'dist', 'angular-app', 'browser');
+
+// Register a custom privileged scheme so we can serve Angular files with controlled
+// response headers (including a permissive CSP). This replaces loadFile()/file://, because
+// Electron's file:// protocol bypasses onHeadersReceived so CSP injection has no effect there.
+protocol.registerSchemesAsPrivileged([
+  {
+    scheme: 'devclip',
+    privileges: {
+      standard: true,
+      secure: true,
+      allowServiceWorkers: false,
+      supportFetchAPI: true,
+      corsEnabled: false,
+    },
+  },
+]);
 
 function resolveAppIconPath(): string | undefined {
   const fromPublic = path.join(projectRoot, 'angular-app', 'public', 'devclip_icon_transparent.svg');
@@ -69,29 +88,37 @@ let lastOverlayShortcutSetting = '';
 let lastClipboardPollMs = 500;
 let lastImageSig = '';
 
-function applyRendererCsp(): void {
-  const dev = process.env.DEVCLIP_DEV === '1';
-  session.defaultSession.webRequest.onHeadersReceived((details, callback) => {
-    const csp = dev
-      ? [
-          "default-src 'self' http://localhost:4200 ws://localhost:4200",
-          "script-src 'self' 'unsafe-inline' 'unsafe-eval' http://localhost:4200",
-          "style-src 'self' 'unsafe-inline' http://localhost:4200",
-          "img-src 'self' data: blob: http://localhost:4200 https:",
-          "font-src 'self' data: http://localhost:4200",
-          "connect-src 'self' http://localhost:4200 ws://localhost:* ws://127.0.0.1:* http://127.0.0.1:* http://localhost:*",
-        ].join('; ')
-      : [
-          "default-src 'self' file: data:",
-          "script-src 'self'",
-          "style-src 'self' 'unsafe-inline'",
-          "img-src 'self' data: blob: file:",
-          "font-src 'self' data: file:",
-          "connect-src 'none'",
-        ].join('; ');
-    const headers = { ...(details.responseHeaders ?? {}) };
-    headers['Content-Security-Policy'] = [csp];
-    callback({ responseHeaders: headers });
+function registerAppProtocol(): void {
+  // Serve the Angular production bundle through devclip:// so we control the response
+  // headers (including CSP). file:// loads bypass onHeadersReceived entirely, so CSP
+  // injection via webRequest has no effect for loadFile() — hence this custom scheme.
+  const csp = [
+    "default-src 'self' devclip: data: blob:",
+    "script-src 'self' devclip: 'unsafe-inline' 'unsafe-eval' blob:",
+    "style-src 'self' devclip: 'unsafe-inline'",
+    "img-src 'self' devclip: data: blob:",
+    "font-src 'self' devclip: data:",
+    "connect-src 'self' devclip: data: blob:",
+    "worker-src blob:",
+  ].join('; ');
+
+  protocol.handle('devclip', async (request) => {
+    const url = new URL(request.url);
+    // Strip leading slash; fall back to index.html for the root and any SPA route.
+    let pathname = decodeURIComponent(url.pathname);
+    if (!pathname || pathname === '/') pathname = 'index.html';
+    // Strip a leading slash so path.join works correctly on Windows.
+    if (pathname.startsWith('/')) pathname = pathname.slice(1);
+
+    const filePath = path.join(angularDistPath, pathname);
+    const fileResponse = await net.fetch(`file://${filePath}`);
+
+    const headers = new Headers(fileResponse.headers);
+    headers.set('Content-Security-Policy', csp);
+    return new Response(fileResponse.body, {
+      status: fileResponse.status,
+      headers,
+    });
   });
 }
 
@@ -164,7 +191,7 @@ function createMainWindow(): BrowserWindow {
   if (isDev) {
     void win.loadURL('http://localhost:4200/');
   } else {
-    void win.loadFile(indexHtmlPath);
+    void win.loadURL('devclip://devclip/');
   }
 
   attachLoadFailureHandler(win, 'Main window');
@@ -205,7 +232,7 @@ function createOverlayWindow(): BrowserWindow {
   if (isDev) {
     void win.loadURL('http://localhost:4200/#/overlay');
   } else {
-    void win.loadFile(indexHtmlPath, { hash: '/overlay' });
+    void win.loadURL('devclip://devclip/#/overlay');
   }
 
   attachLoadFailureHandler(win, 'Overlay');
@@ -466,7 +493,7 @@ function registerGlobalShortcut(): void {
 }
 
 app.whenReady().then(() => {
-  applyRendererCsp();
+  registerAppProtocol();
   initDatabase(app.getPath('userData'));
   ensureSnippetsSchema();
   refreshSettingsCache();
