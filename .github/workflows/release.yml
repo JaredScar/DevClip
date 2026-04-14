@@ -106,13 +106,6 @@ jobs:
         run: npx electron-builder --mac dmg --x64 --arm64 --publish never
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          # Provide empty defaults when signing secrets are not configured.
-          # electron-builder checks these env vars even if `mac.sign`/`dmg.sign` are false.
-          APPLE_ID: ${{ secrets.APPLE_ID || '' }}
-          APPLE_PASSWORD: ${{ secrets.APPLE_PASSWORD || '' }}
-          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID || '' }}
-          CSC_LINK: ${{ secrets.CSC_LINK || '' }}
-          CSC_KEY_PASSWORD: ${{ secrets.CSC_KEY_PASSWORD || '' }}
 
       - name: Upload macOS artifacts
         uses: actions/upload-artifact@v4
@@ -120,7 +113,6 @@ jobs:
           name: macos-artifacts
           path: |
             release/DevClip-*.dmg
-            release/DevClip-*.zip
             release/*.yml
             release/*.yaml
 
