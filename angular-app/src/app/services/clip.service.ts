@@ -92,8 +92,6 @@ export class ClipService {
   }
 
   async clearAllHistory() {
-    const ok = window.confirm('Delete ALL clipboard history? This cannot be undone.');
-    if (!ok) return;
     await window.devclip.clearAllClips();
     await this.reloadFromServer();
   }

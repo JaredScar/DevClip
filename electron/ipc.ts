@@ -4,6 +4,7 @@ import type { ClipRow, ClipSearchOptions, ClipType } from '../database/db';
 import {
   addTagToClip,
   deleteClip,
+  clearAllClips,
   getClipActivityByDayRange,
   getClips,
   getClipTags,
