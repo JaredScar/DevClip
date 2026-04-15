@@ -151,12 +151,34 @@ import { FeatureFlagService } from '../../services/feature-flag.service';
         </h3>
         <label class="mb-2 flex flex-col gap-1 text-zinc-300 lite:text-zinc-800">
           <span>Global shortcut (Electron accelerator, empty = defaults)</span>
-          <input
-            class="rounded border border-white/10 bg-[#2a2a2a] p-2 font-mono text-xs text-white lite:border-zinc-300 lite:bg-white lite:text-zinc-900"
-            [(ngModel)]="overlayShortcut"
-            (blur)="persistKey('overlayShortcut', overlayShortcut.trim())"
-            placeholder="CommandOrControl+Shift+V"
-          />
+          <div class="flex flex-wrap items-center gap-2">
+            <input
+              class="w-full flex-1 rounded border border-white/10 bg-[#2a2a2a] p-2 font-mono text-xs text-white lite:border-zinc-300 lite:bg-white lite:text-zinc-900 disabled:opacity-60"
+              [value]="overlayShortcut || ''"
+              disabled
+              placeholder="CommandOrControl+Shift+V"
+            />
+            <button
+              type="button"
+              class="rounded-lg bg-devclip-accent px-3 py-1.5 text-xs font-semibold text-black disabled:opacity-50"
+              [disabled]="capturingShortcut"
+              (click)="beginShortcutCapture()"
+            >
+              {{ capturingShortcut ? 'Press keys…' : 'Set shortcut' }}
+            </button>
+          </div>
+          @if (capturingShortcut) {
+            <div
+              class="mt-2 rounded border border-white/10 bg-[#121212] p-3 text-xs text-zinc-500 lite:border-zinc-200 lite:bg-zinc-100 lite:text-zinc-600"
+              tabindex="0"
+              (keydown)="onShortcutCaptureKeydown($event)"
+            >
+              Press your keyboard shortcut. (Esc cancels)
+              <div class="mt-1 font-mono text-[11px] text-zinc-400 lite:text-zinc-500">
+                {{ capturedShortcut || '…' }}
+              </div>
+            </div>
+          }
         </label>
         <label class="mb-2 flex flex-col gap-1 text-zinc-300 lite:text-zinc-800">
           <span>Overlay position</span>
@@ -538,6 +560,8 @@ export class SettingsPanelComponent implements OnInit, OnDestroy {
   ignorePatternsJson = '[]';
   historyLimit = 1000;
   overlayShortcut = '';
+  capturingShortcut = false;
+  capturedShortcut = '';
   clipboardPollMs = 500;
   theme: ThemeSetting = 'dark';
   launchAtLogin = false;
@@ -880,5 +904,59 @@ export class SettingsPanelComponent implements OnInit, OnDestroy {
   async onDensityChange() {
     await this.persistKey('uiDensity', this.uiDensity);
     document.documentElement.classList.toggle('devclip-density-compact', this.uiDensity === 'compact');
+  }
+
+  beginShortcutCapture(): void {
+    // Pause global overlay hotkeys while capturing to prevent the overlay from opening.
+    void window.devclip.overlayPauseShortcuts();
+    this.capturingShortcut = true;
+    this.capturedShortcut = '';
+    // Defer focus to allow the capture div to exist.
+    queueMicrotask(() => {
+      // Focus the capture box so keydown is received even without clicking.
+      const el = document.querySelector('[tabindex="0"]') as HTMLElement | null;
+      el?.focus?.();
+    });
+  }
+
+  onShortcutCaptureKeydown(ev: KeyboardEvent): void {
+    ev.preventDefault();
+    ev.stopPropagation();
+
+    if (ev.key === 'Escape') {
+      this.capturingShortcut = false;
+      this.capturedShortcut = '';
+      void window.devclip.overlayResumeShortcuts();
+      return;
+    }
+
+    const accel = this.keyboardEventToAccelerator(ev);
+    if (!accel) return;
+
+    this.capturedShortcut = accel;
+    this.overlayShortcut = accel;
+    this.capturingShortcut = false;
+    void this.persistKey('overlayShortcut', accel);
+    void window.devclip.overlayResumeShortcuts();
+  }
+
+  private keyboardEventToAccelerator(ev: KeyboardEvent): string | null {
+    // Ignore modifier-only presses.
+    if (ev.key === 'Control' || ev.key === 'Shift' || ev.key === 'Alt' || ev.key === 'Meta') return null;
+
+    const parts: string[] = [];
+    if (ev.ctrlKey || ev.metaKey) parts.push('CommandOrControl');
+    if (ev.shiftKey) parts.push('Shift');
+    if (ev.altKey) parts.push('Alt');
+
+    let key = ev.key;
+    if (key.length === 1) {
+      key = key.toUpperCase();
+    }
+
+    // Electron accelerator strings typically use Enter/Backspace/etc. as-is.
+    parts.push(key);
+
+    return parts.join('+');
   }
 }

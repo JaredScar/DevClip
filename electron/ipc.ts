@@ -234,6 +234,30 @@ export function registerIpcHandlers(
     return { ok: true };
   });
 
+  ipcMain.handle('overlay:pauseShortcuts', () => {
+    try {
+      const m = globalThis as unknown as { pauseOverlayShortcuts?: () => void; resumeOverlayShortcuts?: () => void };
+      if (typeof m.pauseOverlayShortcuts === 'function') {
+        m.pauseOverlayShortcuts();
+      }
+    } catch {
+      /* ignore */
+    }
+    return { ok: true };
+  });
+
+  ipcMain.handle('overlay:resumeShortcuts', () => {
+    try {
+      const m = globalThis as unknown as { pauseOverlayShortcuts?: () => void; resumeOverlayShortcuts?: () => void };
+      if (typeof m.resumeOverlayShortcuts === 'function') {
+        m.resumeOverlayShortcuts();
+      }
+    } catch {
+      /* ignore */
+    }
+    return { ok: true };
+  });
+
   ipcMain.handle('main:show', () => {
     const win = getMainWindow();
     if (win && !win.isDestroyed()) {

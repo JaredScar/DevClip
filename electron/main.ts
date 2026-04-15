@@ -84,6 +84,7 @@ let pollTimer: NodeJS.Timeout | null = null;
 let settingsTimer: NodeJS.Timeout | null = null;
 let cachedSettings: Record<string, string> = {};
 let registeredOverlayAccelerators: string[] = [];
+let overlayShortcutsPaused = false;
 let lastOverlayShortcutSetting = '';
 let lastClipboardPollMs = 500;
 let lastImageSig = '';
@@ -455,6 +456,10 @@ function unregisterAllOverlayShortcuts(): void {
 }
 
 function registerGlobalShortcut(): void {
+  if (overlayShortcutsPaused) {
+    unregisterAllOverlayShortcuts();
+    return;
+  }
   unregisterAllOverlayShortcuts();
   const handler = (): void => {
     toggleOverlay();
@@ -491,6 +496,22 @@ function registerGlobalShortcut(): void {
     'Failed to register any overlay global shortcut. Close other apps using Ctrl+Shift+V / Ctrl+Alt+V / Ctrl+Shift+O or quit duplicate DevClip instances.'
   );
 }
+
+function pauseOverlayShortcuts(): void {
+  overlayShortcutsPaused = true;
+  unregisterAllOverlayShortcuts();
+}
+
+function resumeOverlayShortcuts(): void {
+  overlayShortcutsPaused = false;
+  registerGlobalShortcut();
+}
+
+// Expose for IPC handler (renderer -> main) without creating circular imports.
+(globalThis as unknown as { pauseOverlayShortcuts?: () => void; resumeOverlayShortcuts?: () => void }).pauseOverlayShortcuts =
+  pauseOverlayShortcuts;
+(globalThis as unknown as { pauseOverlayShortcuts?: () => void; resumeOverlayShortcuts?: () => void }).resumeOverlayShortcuts =
+  resumeOverlayShortcuts;
 
 app.whenReady().then(() => {
   registerAppProtocol();

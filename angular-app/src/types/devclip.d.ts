@@ -121,6 +121,8 @@ export interface DevClipApi {
   }) => Promise<{ ok: boolean }>;
   automationDelete: (id: number) => Promise<{ ok: boolean }>;
   hideOverlay: () => Promise<unknown>;
+  overlayPauseShortcuts: () => Promise<{ ok: boolean }>;
+  overlayResumeShortcuts: () => Promise<{ ok: boolean }>;
   showMain: () => Promise<unknown>;
   minimizeMain: () => Promise<unknown>;
   openExternalUrl: (url: string) => Promise<{ ok: boolean; error?: string }>;
