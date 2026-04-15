@@ -20,7 +20,7 @@ type AiActionId =
   standalone: true,
   imports: [CommonModule, FormsModule],
   template: `
-    <div class="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto p-1">
+    <div class="relative flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto p-1">
       <div class="flex flex-wrap items-center gap-2">
         <span class="text-lg">&#10024;</span>
         <h2 class="text-sm font-semibold text-white lite:text-zinc-900">AI Actions</h2>
@@ -30,162 +30,163 @@ type AiActionId =
       </div>
 
       @if (!flags.isProUnlocked()) {
-        <div class="space-y-3">
-          <p class="text-sm text-zinc-500 lite:text-zinc-600">
-            Unlock Pro to run AI on your clips. Configure API keys under Settings → AI Actions.
-          </p>
-
-          <div class="rounded-xl border border-white/10 bg-[#121212] p-3 lite:border-zinc-200 lite:bg-zinc-50">
-            <div class="mb-2 text-[10px] font-semibold uppercase text-zinc-500 lite:text-zinc-600">
-              Available actions (read-only)
+        <div class="absolute inset-0 z-20 flex flex-col gap-3 bg-black/15 p-4 text-xs backdrop-blur lite:bg-zinc-100/10">
+          <div
+            class="w-full max-w-[560px] rounded-xl border border-amber-500/30 bg-amber-500/10/70 p-4 text-xs text-amber-200 lite:border-amber-400/40 lite:bg-amber-100/70 lite:text-amber-900"
+          >
+            <div class="flex flex-wrap items-center gap-2">
+              <span class="text-lg">✨</span>
+              <h2 class="text-sm font-semibold">AI Actions</h2>
+              <span class="rounded bg-zinc-700 px-1.5 py-0.5 text-[10px] font-semibold uppercase text-zinc-300">PRO</span>
             </div>
-            <div class="flex flex-wrap gap-1.5">
+            <p class="mt-2">
+              Unlock Pro to run AI on your clips. Configure API keys under Settings → AI Actions.
+            </p>
+            <div class="mt-2 flex flex-wrap gap-1.5">
               @for (a of lockedActions; track a) {
                 <button
                   type="button"
-                  class="cursor-not-allowed rounded-lg bg-white/10 px-2 py-1.5 text-[10px] font-semibold text-zinc-400"
+                  class="cursor-not-allowed rounded-lg bg-white/10 px-2 py-1.5 text-[10px] font-semibold text-zinc-200"
                   disabled
                 >
                   {{ a }}
                 </button>
               }
             </div>
+            <p class="mt-2">No interaction is allowed until Pro is unlocked.</p>
           </div>
-
-          <p class="text-xs text-zinc-500 lite:text-zinc-600">
-            No interaction is allowed until Pro is unlocked.
-          </p>
         </div>
-      } @else {
-        <p class="text-xs text-zinc-500 lite:text-zinc-600">
-          Select a text clip in History or paste below. Keys and provider live in Settings. Outputs can be
-          appended to history (toggle below or in Settings).
+      }
+
+      <p class="text-xs text-zinc-500 lite:text-zinc-600">
+        Select a text clip in History or paste below. Keys and provider live in Settings. Outputs can be
+        appended to history (toggle below or in Settings).
+      </p>
+
+      @if (blockedImage()) {
+        <p class="rounded-lg border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-xs text-amber-200">
+          The selected clip is an image. Paste text in the box below or choose a text clip.
         </p>
+      }
 
-        @if (blockedImage()) {
-          <p class="rounded-lg border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-xs text-amber-200">
-            The selected clip is an image. Paste text in the box below or choose a text clip.
+      <label class="flex cursor-pointer items-center gap-2 text-xs text-zinc-400 lite:text-zinc-600">
+        <input type="checkbox" [(ngModel)]="appendOutput" />
+        <span>Append result to clipboard history</span>
+      </label>
+
+      <div class="rounded-xl border border-white/10 bg-[#121212] p-3 lite:border-zinc-200 lite:bg-zinc-50">
+        <div class="mb-1 text-[10px] font-semibold uppercase text-zinc-500 lite:text-zinc-600">Input</div>
+        @if (selected(); as sel) {
+          <p class="mb-2 text-[10px] text-zinc-600 lite:text-zinc-500">
+            Selected: <span class="font-mono">{{ sel.type }}</span> ·
+            {{ sel.content.length > 120 ? (sel.content.slice(0, 120) + '…') : sel.content }}
           </p>
+        } @else {
+          <p class="mb-2 text-[10px] text-zinc-600">No clip selected — paste into the box below.</p>
         }
+        <textarea
+          class="h-28 w-full rounded-lg border border-white/10 bg-black/40 p-2 font-mono text-[11px] text-zinc-200 lite:border-zinc-300 lite:bg-white lite:text-zinc-900"
+          [(ngModel)]="manualOverride"
+          placeholder="Optional: overrides selected clip (plain text)"
+        ></textarea>
+      </div>
 
-        <label class="flex cursor-pointer items-center gap-2 text-xs text-zinc-400 lite:text-zinc-600">
-          <input type="checkbox" [(ngModel)]="appendOutput" />
-          <span>Append result to clipboard history</span>
-        </label>
-
-        <div class="rounded-xl border border-white/10 bg-[#121212] p-3 lite:border-zinc-200 lite:bg-zinc-50">
-          <div class="mb-1 text-[10px] font-semibold uppercase text-zinc-500 lite:text-zinc-600">Input</div>
-          @if (selected(); as sel) {
-            <p class="mb-2 text-[10px] text-zinc-600 lite:text-zinc-500">
-              Selected: <span class="font-mono">{{ sel.type }}</span> ·
-              {{ sel.content.length > 120 ? (sel.content.slice(0, 120) + '…') : sel.content }}
-            </p>
-          } @else {
-            <p class="mb-2 text-[10px] text-zinc-600">No clip selected — paste into the box below.</p>
-          }
-          <textarea
-            class="h-28 w-full rounded-lg border border-white/10 bg-black/40 p-2 font-mono text-[11px] text-zinc-200 lite:border-zinc-300 lite:bg-white lite:text-zinc-900"
-            [(ngModel)]="manualOverride"
-            placeholder="Optional: overrides selected clip (plain text)"
-          ></textarea>
-        </div>
-
-        <div class="grid gap-2 sm:grid-cols-2">
-          <div class="rounded-xl border border-white/10 bg-[#1a1a1a] p-3 lite:border-zinc-200 lite:bg-white">
-            <div class="mb-2 text-[10px] font-semibold uppercase text-zinc-500">Quick actions</div>
-            <div class="flex flex-wrap gap-1.5">
-              <button
-                type="button"
-                class="rounded-lg bg-devclip-accent px-2 py-1.5 text-[10px] font-semibold text-black disabled:opacity-40"
-                [disabled]="running() || !canRun()"
-                (click)="run('summarize')"
-              >
-                Summarize
-              </button>
-              <button
-                type="button"
-                class="rounded-lg bg-devclip-accent px-2 py-1.5 text-[10px] font-semibold text-black disabled:opacity-40"
-                [disabled]="running() || !canRun()"
-                (click)="run('explain')"
-              >
-                Explain
-              </button>
-              <button
-                type="button"
-                class="rounded-lg bg-devclip-accent px-2 py-1.5 text-[10px] font-semibold text-black disabled:opacity-40"
-                [disabled]="running() || !canRun()"
-                (click)="run('fix_improve')"
-              >
-                Fix / improve
-              </button>
-              <button
-                type="button"
-                class="rounded-lg bg-devclip-accent px-2 py-1.5 text-[10px] font-semibold text-black disabled:opacity-40"
-                [disabled]="running() || !canRun()"
-                (click)="run('gen_test')"
-              >
-                Generate tests
-              </button>
-            </div>
-          </div>
-
-          <div class="rounded-xl border border-white/10 bg-[#1a1a1a] p-3 lite:border-zinc-200 lite:bg-white">
-            <div class="mb-2 text-[10px] font-semibold uppercase text-zinc-500">Rewrite tone</div>
-            <div class="flex flex-wrap gap-1.5">
-              <button
-                type="button"
-                class="rounded-lg border border-white/15 px-2 py-1.5 text-[10px] text-zinc-300 disabled:opacity-40 lite:border-zinc-300 lite:text-zinc-800"
-                [disabled]="running() || !canRun()"
-                (click)="run('rewrite', 'formal')"
-              >
-                Formal
-              </button>
-              <button
-                type="button"
-                class="rounded-lg border border-white/15 px-2 py-1.5 text-[10px] text-zinc-300 disabled:opacity-40 lite:border-zinc-300 lite:text-zinc-800"
-                [disabled]="running() || !canRun()"
-                (click)="run('rewrite', 'casual')"
-              >
-                Casual
-              </button>
-              <button
-                type="button"
-                class="rounded-lg border border-white/15 px-2 py-1.5 text-[10px] text-zinc-300 disabled:opacity-40 lite:border-zinc-300 lite:text-zinc-800"
-                [disabled]="running() || !canRun()"
-                (click)="run('rewrite', 'technical')"
-              >
-                Technical
-              </button>
-            </div>
+      <div class="grid gap-2 sm:grid-cols-2">
+        <div class="rounded-xl border border-white/10 bg-[#1a1a1a] p-3 lite:border-zinc-200 lite:bg-white">
+          <div class="mb-2 text-[10px] font-semibold uppercase text-zinc-500">Quick actions</div>
+          <div class="flex flex-wrap gap-1.5">
+            <button
+              type="button"
+              class="rounded-lg bg-devclip-accent px-2 py-1.5 text-[10px] font-semibold text-black disabled:opacity-40"
+              [disabled]="running() || !canRun()"
+              (click)="run('summarize')"
+            >
+              Summarize
+            </button>
+            <button
+              type="button"
+              class="rounded-lg bg-devclip-accent px-2 py-1.5 text-[10px] font-semibold text-black disabled:opacity-40"
+              [disabled]="running() || !canRun()"
+              (click)="run('explain')"
+            >
+              Explain
+            </button>
+            <button
+              type="button"
+              class="rounded-lg bg-devclip-accent px-2 py-1.5 text-[10px] font-semibold text-black disabled:opacity-40"
+              [disabled]="running() || !canRun()"
+              (click)="run('fix_improve')"
+            >
+              Fix / improve
+            </button>
+            <button
+              type="button"
+              class="rounded-lg bg-devclip-accent px-2 py-1.5 text-[10px] font-semibold text-black disabled:opacity-40"
+              [disabled]="running() || !canRun()"
+              (click)="run('gen_test')"
+            >
+              Generate tests
+            </button>
           </div>
         </div>
 
         <div class="rounded-xl border border-white/10 bg-[#1a1a1a] p-3 lite:border-zinc-200 lite:bg-white">
-          <div class="mb-2 text-[10px] font-semibold uppercase text-zinc-500">Translate</div>
-          <div class="flex flex-wrap items-end gap-2">
-            <select
-              class="rounded border border-white/10 bg-[#2a2a2a] p-2 text-xs text-white lite:border-zinc-300 lite:bg-white lite:text-zinc-900"
-              [(ngModel)]="translateLang"
-            >
-              <option value="Spanish">Spanish</option>
-              <option value="French">French</option>
-              <option value="German">German</option>
-              <option value="Japanese">Japanese</option>
-              <option value="Simplified Chinese">Simplified Chinese</option>
-              <option value="Portuguese">Portuguese</option>
-              <option value="Korean">Korean</option>
-              <option value="Italian">Italian</option>
-            </select>
+          <div class="mb-2 text-[10px] font-semibold uppercase text-zinc-500">Rewrite tone</div>
+          <div class="flex flex-wrap gap-1.5">
             <button
               type="button"
-              class="rounded-lg bg-devclip-accent px-3 py-2 text-xs font-semibold text-black disabled:opacity-40"
+              class="rounded-lg border border-white/15 px-2 py-1.5 text-[10px] text-zinc-300 disabled:opacity-40 lite:border-zinc-300 lite:text-zinc-800"
               [disabled]="running() || !canRun()"
-              (click)="run('translate', translateLang)"
+              (click)="run('rewrite', 'formal')"
             >
-              Translate
+              Formal
+            </button>
+            <button
+              type="button"
+              class="rounded-lg border border-white/15 px-2 py-1.5 text-[10px] text-zinc-300 disabled:opacity-40 lite:border-zinc-300 lite:text-zinc-800"
+              [disabled]="running() || !canRun()"
+              (click)="run('rewrite', 'casual')"
+            >
+              Casual
+            </button>
+            <button
+              type="button"
+              class="rounded-lg border border-white/15 px-2 py-1.5 text-[10px] text-zinc-300 disabled:opacity-40 lite:border-zinc-300 lite:text-zinc-800"
+              [disabled]="running() || !canRun()"
+              (click)="run('rewrite', 'technical')"
+            >
+              Technical
             </button>
           </div>
         </div>
+      </div>
+
+      <div class="rounded-xl border border-white/10 bg-[#1a1a1a] p-3 lite:border-zinc-200 lite:bg-white">
+        <div class="mb-2 text-[10px] font-semibold uppercase text-zinc-500">Translate</div>
+        <div class="flex flex-wrap items-end gap-2">
+          <select
+            class="rounded border border-white/10 bg-[#2a2a2a] p-2 text-xs text-white lite:border-zinc-300 lite:bg-white lite:text-zinc-900"
+            [(ngModel)]="translateLang"
+          >
+            <option value="Spanish">Spanish</option>
+            <option value="French">French</option>
+            <option value="German">German</option>
+            <option value="Japanese">Japanese</option>
+            <option value="Simplified Chinese">Simplified Chinese</option>
+            <option value="Portuguese">Portuguese</option>
+            <option value="Korean">Korean</option>
+            <option value="Italian">Italian</option>
+          </select>
+          <button
+            type="button"
+            class="rounded-lg bg-devclip-accent px-3 py-2 text-xs font-semibold text-black disabled:opacity-40"
+            [disabled]="running() || !canRun()"
+            (click)="run('translate', translateLang)"
+          >
+            Translate
+          </button>
+        </div>
+      </div>
 
         <div class="rounded-xl border border-white/10 bg-[#1a1a1a] p-3 lite:border-zinc-200 lite:bg-white">
           <div class="mb-2 text-[10px] font-semibold uppercase text-zinc-500">Regex from English</div>
@@ -247,7 +248,7 @@ type AiActionId =
             >
           </div>
         }
-      }
+      <!-- rest of UI continues unchanged -->
     </div>
   `,
 })

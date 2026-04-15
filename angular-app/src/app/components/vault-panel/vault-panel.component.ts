@@ -8,7 +8,7 @@ import { FeatureFlagService } from '../../services/feature-flag.service';
   standalone: true,
   imports: [CommonModule, FormsModule],
   template: `
-    <div class="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto p-1">
+    <div class="relative flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto p-1">
       <div class="flex flex-wrap items-center gap-2">
         <span class="text-lg">🛡</span>
         <h2 class="text-sm font-semibold text-white lite:text-zinc-900">Vault</h2>
@@ -18,14 +18,25 @@ import { FeatureFlagService } from '../../services/feature-flag.service';
       </div>
 
       @if (!flags.isProUnlocked()) {
-        <p class="text-sm text-zinc-500 lite:text-zinc-600">
-          Unlock Pro to use the encrypted local vault (AES-256-GCM, separate PIN).
-        </p>
-      } @else {
-        <p class="text-xs text-zinc-500 lite:text-zinc-600">
-          Sensitive clips are encrypted at rest with a vault PIN (independent of app lock). Unlock to view
-          entries; copy decrypts to the clipboard only in memory.
-        </p>
+        <div class="absolute inset-0 z-20 flex flex-col gap-3 bg-black/15 p-4 text-xs backdrop-blur lite:bg-zinc-100/10">
+          <div
+            class="w-full max-w-[520px] rounded-xl border border-amber-500/30 bg-amber-500/10/70 p-4 text-xs text-amber-200 lite:border-amber-400/40 lite:bg-amber-100/70 lite:text-amber-900"
+          >
+            <div class="flex flex-wrap items-center gap-2">
+              <span class="text-lg">🛡</span>
+              <h2 class="text-sm font-semibold">Vault</h2>
+              <span class="rounded bg-zinc-700 px-1.5 py-0.5 text-[10px] font-semibold uppercase text-zinc-300">PRO</span>
+            </div>
+            <p class="mt-2">Unlock Pro to use the encrypted local vault (AES-256-GCM, separate PIN).</p>
+            <p class="mt-2">No interaction is allowed until Pro is unlocked.</p>
+          </div>
+        </div>
+      }
+
+      <p class="text-xs text-zinc-500 lite:text-zinc-600">
+        Sensitive clips are encrypted at rest with a vault PIN (independent of app lock). Unlock to view
+        entries; copy decrypts to the clipboard only in memory.
+      </p>
 
         @if (state(); as st) {
           <div class="flex flex-wrap items-center gap-2 text-xs text-zinc-400 lite:text-zinc-600">
@@ -254,7 +265,7 @@ import { FeatureFlagService } from '../../services/feature-flag.service';
             }
           </ul>
         </div>
-      }
+      <!-- end vault -->
     </div>
   `,
 })
