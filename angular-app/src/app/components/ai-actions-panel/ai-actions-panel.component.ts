@@ -32,7 +32,7 @@ type AiActionId =
       @if (!flags.isProUnlocked()) {
         <div class="absolute inset-0 z-20 flex flex-col gap-3 bg-black/40 p-4 text-xs backdrop-blur lite:bg-zinc-100/20">
           <div
-            class="w-full max-w-[560px] rounded-xl border border-amber-500/30 bg-amber-500/10 p-4 text-xs text-amber-200 lite:border-amber-400/40 lite:bg-amber-100 lite:text-amber-900"
+            class="w-full rounded-xl border border-amber-500/30 bg-amber-500/10 p-4 text-xs text-amber-200 lite:border-amber-400/40 lite:bg-amber-100 lite:text-amber-900"
           >
             <div class="flex flex-wrap items-center gap-2">
               <span class="text-lg">✨</span>
