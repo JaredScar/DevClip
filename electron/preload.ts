@@ -32,6 +32,7 @@ const api = {
     ipcRenderer.invoke('clips:save', payload),
   togglePin: (id: number) => ipcRenderer.invoke('clips:pin', id),
   deleteClip: (id: number) => ipcRenderer.invoke('clips:delete', id),
+  clearAllClips: () => ipcRenderer.invoke('clips:clearAll') as Promise<{ ok: boolean }>,
   incrementClipUse: (id: number) => ipcRenderer.invoke('clips:incrementUse', id),
   tagClip: (clipId: number, tagName: string) => ipcRenderer.invoke('clips:tag', clipId, tagName),
   untagClip: (clipId: number, tagName: string) => ipcRenderer.invoke('clips:untag', clipId, tagName),

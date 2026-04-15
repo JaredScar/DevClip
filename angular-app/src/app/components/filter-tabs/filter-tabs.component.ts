@@ -51,7 +51,49 @@ import { ClipsStore } from '../../store/clips.store';
       >
         Clear filters
       </button>
+
+      <button
+        type="button"
+        class="rounded-full border border-red-500/30 bg-red-500/10 px-2 py-1 text-red-300 hover:bg-red-500/15"
+        (click)="beginClearHistory()"
+      >
+        Delete all history
+      </button>
     </div>
+
+    @if (showClearHistoryModal) {
+      <div class="fixed inset-0 z-[1000] flex items-center justify-center">
+        <div class="absolute inset-0 bg-black/60" (click)="cancelClearHistory()"></div>
+        <div class="relative z-[1001] w-[min(520px,calc(100vw-2rem))] rounded-2xl border border-white/10 bg-[#0d0d0d] p-4 shadow-overlay lite:border-zinc-200 lite:bg-white">
+          <div class="flex flex-wrap items-center gap-3">
+            <span class="text-lg">⚠️</span>
+            <h3 class="text-sm font-semibold text-white lite:text-zinc-900">Delete ALL history?</h3>
+          </div>
+          <p class="mt-2 text-xs text-zinc-400 lite:text-zinc-600">
+            This removes all clipboard clips from the local database. This cannot be undone.
+          </p>
+
+          <div class="mt-4 flex flex-wrap gap-2">
+            <button
+              type="button"
+              class="rounded-lg border border-white/15 px-3 py-1.5 text-xs text-zinc-300 hover:bg-white/5 lite:border-zinc-300 lite:text-zinc-800"
+              (click)="cancelClearHistory()"
+            >
+              Cancel
+            </button>
+            <button
+              type="button"
+              class="rounded-lg bg-red-600 px-3 py-1.5 text-xs font-semibold text-white disabled:opacity-50"
+              [disabled]="clearingHistory"
+              (click)="confirmClearHistory()"
+            >
+              {{ clearingHistory ? 'Deleting…' : 'Delete all' }}
+            </button>
+          </div>
+        </div>
+      </div>
+    }
+
     @if (allTags.length) {
       <div class="mt-2 flex flex-wrap gap-1">
         @for (t of allTags; track t.id) {
@@ -91,6 +133,9 @@ export class FilterTabsComponent implements OnInit {
   sourceApp = '';
   dateFromStr = '';
   dateToStr = '';
+
+  showClearHistoryModal = false;
+  clearingHistory = false;
 
   constructor(
     readonly store: ClipsStore,
@@ -155,6 +200,25 @@ export class FilterTabsComponent implements OnInit {
     this.store.dateTo.set(null);
     this.store.clearTagFilters();
     void this.clips.refreshSearch(this.store.searchQuery());
+  }
+
+  beginClearHistory(): void {
+    this.showClearHistoryModal = true;
+  }
+
+  cancelClearHistory(): void {
+    this.showClearHistoryModal = false;
+    this.clearingHistory = false;
+  }
+
+  async confirmClearHistory(): Promise<void> {
+    this.clearingHistory = true;
+    try {
+      await this.clips.clearAllHistory();
+      this.showClearHistoryModal = false;
+    } finally {
+      this.clearingHistory = false;
+    }
   }
 
   private toStartOfDayUnix(s: string): number | null {

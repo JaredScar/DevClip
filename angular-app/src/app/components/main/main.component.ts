@@ -362,6 +362,7 @@ export class MainComponent implements OnInit, OnDestroy {
     this.syncPoll = setInterval(() => this.refreshSyncHeader(), 20_000);
   }
 
+
   ngOnDestroy() {
     this.unsubNew?.();
     if (this.syncPoll) {

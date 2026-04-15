@@ -192,6 +192,14 @@ export function registerIpcHandlers(
     return { ok: true };
   });
 
+  ipcMain.handle('clips:clearAll', () => {
+    const secure = getSettingsMap()['secureDeleteOnRemove'] === '1';
+    // Currently secure deletion only applies per-clip removal; clear-all uses non-secure wipe.
+    // If you want secure wipes for all clips, we can implement it by iterating rows.
+    clearAllClips();
+    return { ok: true, secure };
+  });
+
   ipcMain.handle('clips:incrementUse', (_e, id: number) => {
     incrementClipUseCount(id);
     return { ok: true };

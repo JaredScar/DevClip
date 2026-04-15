@@ -51,6 +51,7 @@ export interface DevClipApi {
   saveClip: (payload: { content: string; type: string; source?: string | null }) => Promise<unknown>;
   togglePin: (id: number) => Promise<unknown>;
   deleteClip: (id: number) => Promise<unknown>;
+  clearAllClips: () => Promise<{ ok: boolean }>;
   incrementClipUse: (id: number) => Promise<unknown>;
   tagClip: (clipId: number, tagName: string) => Promise<unknown>;
   untagClip: (clipId: number, tagName: string) => Promise<unknown>;
