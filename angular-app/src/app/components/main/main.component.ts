@@ -340,7 +340,7 @@ export class MainComponent implements OnInit, OnDestroy {
     { id: 'timeline', label: 'Timeline', pro: true },
     { id: 'vault', label: 'Vault', pro: true },
     { id: 'sync', label: 'Sync', pro: true },
-    { id: 'integrations', label: 'Integrations' },
+    { id: 'integrations', label: 'Integrations', pro: true },
     { id: 'insights', label: 'Insights', pro: true },
     { id: 'enterprise', label: 'Enterprise', enterpriseOnly: true },
     { id: 'settings', label: 'Settings' },
