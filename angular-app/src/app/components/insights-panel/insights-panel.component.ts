@@ -1,7 +1,8 @@
 import { CommonModule } from '@angular/common';
-import { Component, OnInit, computed, signal } from '@angular/core';
+import { Component, OnInit, computed, signal, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import type { DevClipApi } from '../../../types/devclip';
+import { FeatureFlagService } from '../../services/feature-flag.service';
 
 type PeriodPreset = '7d' | '30d' | '90d' | 'month';
 
@@ -12,7 +13,31 @@ type Summary = Awaited<ReturnType<DevClipApi['getInsightsSummary']>>;
   standalone: true,
   imports: [CommonModule, FormsModule],
   template: `
-    <div class="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto p-1">
+    <div class="relative flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto p-1">
+      @if (!flags.isProUnlocked()) {
+        <div class="absolute inset-0 z-20 flex flex-col gap-3 bg-black/40 p-4 text-xs backdrop-blur lite:bg-zinc-100/20">
+          <div class="rounded-xl border border-amber-500/30 bg-amber-500/10 p-4 text-xs text-amber-200 lite:border-amber-400/40 lite:bg-amber-100 lite:text-amber-900">
+            <div class="flex flex-wrap items-center gap-2">
+              <span class="text-lg">📊</span>
+              <h2 class="text-sm font-semibold">Usage insights</h2>
+              <span class="rounded bg-zinc-700 px-1.5 py-0.5 text-[10px] font-semibold uppercase text-zinc-300">PRO</span>
+            </div>
+            <p class="mt-2">Unlock Pro to view usage analytics charts.</p>
+            <div class="mt-2 flex flex-wrap gap-1.5">
+              @for (a of lockedActions; track a) {
+                <button
+                  type="button"
+                  class="cursor-not-allowed rounded-lg bg-white/10 px-2 py-1.5 text-[10px] font-semibold text-zinc-200"
+                  disabled
+                >
+                  {{ a }}
+                </button>
+              }
+            </div>
+            <p class="mt-2">No interaction is allowed until Pro is unlocked.</p>
+          </div>
+        </div>
+      }
       <div class="flex flex-wrap items-center gap-2">
         <h2 class="text-sm font-semibold text-white lite:text-zinc-900">Usage insights</h2>
         <span class="rounded bg-zinc-700 px-1.5 py-0.5 text-[10px] font-semibold uppercase text-zinc-300">
@@ -184,7 +209,10 @@ type Summary = Awaited<ReturnType<DevClipApi['getInsightsSummary']>>;
   `,
 })
 export class InsightsPanelComponent implements OnInit {
+  readonly flags = inject(FeatureFlagService);
+
   period: PeriodPreset = '30d';
+  readonly lockedActions: string[] = ['Captures by day', 'Activity by hour', 'Content types', 'Top sources', 'Top clips'];
 
   readonly loading = signal(false);
   readonly error = signal('');

@@ -33,7 +33,7 @@ interface SyncCategories {
   standalone: true,
   imports: [CommonModule, FormsModule],
   template: `
-    <div class="flex min-h-0 flex-1 flex-col overflow-y-auto text-white lite:text-zinc-900">
+    <div class="relative flex min-h-0 flex-1 flex-col overflow-y-auto text-white lite:text-zinc-900">
       <div class="mb-6 flex items-center gap-2">
         <h2 class="text-sm font-semibold">Cloud Sync</h2>
         <span
@@ -48,6 +48,14 @@ interface SyncCategories {
         the remote server only sees ciphertext. Use any HTTPS URL that supports GET + PUT of the same blob
         (e.g. presigned object storage), or encrypted file backup below.
       </p>
+
+      @if (!flags.isProUnlocked()) {
+        <div class="absolute inset-0 z-20 bg-black/40 p-4 text-xs backdrop-blur lite:bg-zinc-100/20">
+          <div class="rounded-xl border border-amber-500/30 bg-amber-500/10 p-4 text-xs text-amber-200 lite:border-amber-400/40 lite:bg-amber-100 lite:text-amber-900">
+            Unlock Pro to enable cloud push/pull and configuration.
+          </div>
+        </div>
+      }
 
       @if (!flags.isProUnlocked()) {
         <div class="mb-4 rounded-xl border border-amber-500/30 bg-amber-500/10 p-3 text-xs text-amber-200 lite:border-amber-400/40 lite:bg-amber-100 lite:text-amber-900">

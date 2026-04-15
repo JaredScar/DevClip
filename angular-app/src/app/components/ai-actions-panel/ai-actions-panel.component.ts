@@ -30,9 +30,32 @@ type AiActionId =
       </div>
 
       @if (!flags.isProUnlocked()) {
-        <p class="text-sm text-zinc-500 lite:text-zinc-600">
-          Unlock Pro to run AI on your clips. Configure API keys under Settings → AI Actions.
-        </p>
+        <div class="space-y-3">
+          <p class="text-sm text-zinc-500 lite:text-zinc-600">
+            Unlock Pro to run AI on your clips. Configure API keys under Settings → AI Actions.
+          </p>
+
+          <div class="rounded-xl border border-white/10 bg-[#121212] p-3 lite:border-zinc-200 lite:bg-zinc-50">
+            <div class="mb-2 text-[10px] font-semibold uppercase text-zinc-500 lite:text-zinc-600">
+              Available actions (read-only)
+            </div>
+            <div class="flex flex-wrap gap-1.5">
+              @for (a of lockedActions; track a) {
+                <button
+                  type="button"
+                  class="cursor-not-allowed rounded-lg bg-white/10 px-2 py-1.5 text-[10px] font-semibold text-zinc-400"
+                  disabled
+                >
+                  {{ a }}
+                </button>
+              }
+            </div>
+          </div>
+
+          <p class="text-xs text-zinc-500 lite:text-zinc-600">
+            No interaction is allowed until Pro is unlocked.
+          </p>
+        </div>
       } @else {
         <p class="text-xs text-zinc-500 lite:text-zinc-600">
           Select a text clip in History or paste below. Keys and provider live in Settings. Outputs can be
@@ -232,6 +255,17 @@ export class AiActionsPanelComponent implements OnInit {
   readonly flags = inject(FeatureFlagService);
   private readonly store = inject(ClipsStore);
   private readonly clips = inject(ClipService);
+
+  readonly lockedActions: string[] = [
+    'Summarize',
+    'Explain',
+    'Fix / improve',
+    'Generate tests',
+    'Rewrite tone',
+    'Translate',
+    'Regex from English',
+    'Ask anything',
+  ];
 
   readonly running = signal(false);
   readonly out = signal('');
