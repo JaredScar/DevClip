@@ -18,7 +18,10 @@ body {
   height: 100%;
   margin: 0;
   background: transparent;
-  overflow: hidden;
+  /* Allow page-level scrolling for Settings/Insights/etc.
+     Some panels already have `overflow-y-auto`; this prevents the body from clipping them. */
+  overflow-x: hidden;
+  overflow-y: auto;
   font-family:
     ui-sans-serif,
     system-ui,

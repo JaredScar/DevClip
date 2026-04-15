@@ -137,7 +137,7 @@ interface NavItem {
         </nav>
       </aside>
 
-      <main class="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden p-4 lite:bg-zinc-100">
+      <main class="flex min-h-0 min-w-0 flex-1 flex-col overflow-y-auto p-4 lite:bg-zinc-100">
         @switch (main.activeTab()) {
           @case ('history') {
             <div class="flex min-h-0 flex-1 flex-col gap-3 overflow-hidden">
