@@ -1,4 +1,11 @@
-import { clearLicenseCache, setLicenseCache, type Tier } from '../database/licenseCache';
+import {
+  clearLicenseCache,
+  fingerprintForLicenseKey,
+  getLicenseKeyFingerprint,
+  setLicenseCache,
+  setLicenseKeyFingerprint,
+  type Tier,
+} from '../database/licenseCache';
 import { readLicenseKey } from './licenseKeyStore';
 
 export interface ValidateResult {
@@ -8,37 +15,37 @@ export interface ValidateResult {
   device_count: number | null;
 }
 
-/** Offline-friendly validation: prefix keys unlock tiers; optional HTTPS validate can be added later. */
+/**
+ * Tier is never derived from key prefixes alone. Pro/Enterprise require a successful
+ * `POST /api/v1/license/validate` against `licenseServerUrl` (or offline cache from that).
+ */
 export function validateLicenseKeyString(key: string, _serverUrl: string): ValidateResult {
   const k = key.trim();
   if (!k) {
     return { tier: 'free', features: [], expires_at: null, device_count: null };
   }
-  if (k.startsWith('dc_ent_')) {
-    return { tier: 'enterprise', features: ['all'], expires_at: null, device_count: null };
-  }
-  if (k.startsWith('dc_pro_')) {
-    return { tier: 'pro', features: ['all'], expires_at: null, device_count: null };
-  }
   return { tier: 'free', features: [], expires_at: null, device_count: null };
 }
 
-export function refreshLicenseFromDisk(userData: string, serverUrl: string): void {
+/**
+ * Reconcile local cache with the stored key: if the key matches the fingerprint from the last
+ * successful server validation, keep cached tier. Otherwise reset to free until the network refresh runs.
+ */
+export function refreshLicenseFromDisk(userData: string, _serverUrl: string): void {
   const key = readLicenseKey(userData);
   if (!key) {
     clearLicenseCache();
     return;
   }
-  const v = validateLicenseKeyString(key, serverUrl);
-  setLicenseCache({
-    tier: v.tier,
-    features: v.features,
-    expires_at: v.expires_at,
-    device_count: v.device_count,
-  });
+  const fp = fingerprintForLicenseKey(key);
+  const storedFp = getLicenseKeyFingerprint();
+  if (storedFp === fp) {
+    return;
+  }
+  clearLicenseCache();
 }
 
-/** When `licenseServerUrl` points at a DevClip-compatible server, network result overrides prefix cache. */
+/** When `licenseServerUrl` points at a DevClip-compatible server, network result sets tier + fingerprint. */
 export async function tryRefreshLicenseFromNetwork(
   userData: string,
   serverUrl: string
@@ -56,6 +63,9 @@ export async function tryRefreshLicenseFromNetwork(
       signal: AbortSignal.timeout(10_000),
     });
     if (!r.ok) {
+      if (r.status === 404 || r.status === 401) {
+        clearLicenseCache();
+      }
       return;
     }
     const j = (await r.json()) as {
@@ -66,6 +76,7 @@ export async function tryRefreshLicenseFromNetwork(
     };
     const t = j.tier;
     if (t !== 'pro' && t !== 'enterprise') {
+      clearLicenseCache();
       return;
     }
     let features: string[] = [];
@@ -80,7 +91,8 @@ export async function tryRefreshLicenseFromNetwork(
       expires_at: j.expires_at ?? null,
       device_count: j.device_count ?? null,
     });
+    setLicenseKeyFingerprint(fingerprintForLicenseKey(key));
   } catch {
-    /* keep offline / prefix cache */
+    /* offline: keep existing cache if fingerprint still matches */
   }
 }

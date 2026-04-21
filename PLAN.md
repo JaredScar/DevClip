@@ -76,9 +76,11 @@ The code is open source and anyone can self-host; accessing managed cloud servic
 ### 3.2 Key Anatomy
 
 ```
-dc_pro_<base64url-random-32-bytes>          # Personal Pro key
-dc_ent_<base64url-random-32-bytes>          # Enterprise Organization key
+dc_pro_<base64url-random-32-bytes>          # Personal Pro key (issued by license server)
+dc_ent_<base64url-random-32-bytes>          # Enterprise Organization key (issued by license server)
 ```
+
+Keys are **minted** by the server (e.g. `devclip-cloud-server` `POST /api/v1/admin/license-keys` with `X-License-Issuer-Secret` or admin JWT) and stored hashed. The desktop app **does not** treat these prefixes as proof of entitlement without a successful **HTTPS validation** response.
 
 ### 3.3 Validation Flow
 
@@ -104,7 +106,7 @@ Located at **Settings → License & Account** (all items below are UI + wiring t
 
 - [x] Paste / update API key
 - [x] View current tier and expiry (from local license cache when present)
-- [x] View how many devices are active — **cached** `device_count` from license row when HTTPS validation fills it; prefix-only keys show “—” in Settings
+- [x] View how many devices are active — **cached** `device_count` from license row when HTTPS validation fills it; otherwise “—”
 - [x] Revoke key on this device
 - [x] Link to account dashboard — configurable `accountDashboardUrl` + **Open account in browser** (`shell.openExternal` via IPC)
 - [x] Self-hosted server URL override (Enterprise) — `licenseServerUrl` setting + IPC refresh

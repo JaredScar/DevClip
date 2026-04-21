@@ -206,6 +206,7 @@ function ensureDefaultSettings(): void {
     enterprisePolicyForcePrivate: '0',
     /** 0 = unlimited; allowed: 30, 90, 180, 365, 730 (pruned on startup and when changed). */
     auditRetentionDays: '0',
+    licenseKeyFingerprint: '',
   };
   for (const [k, v] of Object.entries(defaults)) {
     const row = db.prepare('SELECT 1 FROM settings WHERE key = ?').get(k);
@@ -223,10 +224,9 @@ export function clampHistoryLimit(n: number): number {
 export function getHistoryLimit(): number {
   try {
     const db = getDb();
-    const tierRow = db.prepare('SELECT tier FROM license WHERE id = 1').get() as
-      | { tier: string }
-      | undefined;
-    const tier = tierRow?.tier ?? 'free';
+    // Avoid static import cycle (db ↔ licenseCache).
+    const { getCachedTier } = require('./licenseCache') as typeof import('./licenseCache');
+    const tier = getCachedTier();
     if (tier === 'pro' || tier === 'enterprise') {
       const capRow = db.prepare('SELECT value FROM settings WHERE key = ?').get('proHistoryCap') as
         | { value: string }

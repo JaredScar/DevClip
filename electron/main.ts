@@ -25,6 +25,7 @@ import {
   getSettingsMap,
   initDatabase,
   insertClip,
+  setSetting,
   type ClipRow,
 } from '../database/db';
 import { ensureSnippetsSchema } from '../database/snippets';
@@ -34,6 +35,7 @@ import { shouldIgnore } from './ignoreRules';
 import { registerIpcHandlers, resetLockSessionFromSettings } from './ipc';
 import { tryAutoVaultSecretClip } from './vaultSession';
 import { refreshEnterprisePolicyIfConfigured } from './enterprisePolicy';
+import { hasStoredLicenseKey } from './licenseKeyStore';
 import { refreshLicenseFromDisk, tryRefreshLicenseFromNetwork } from './licenseRuntime';
 import { runCaptureIntegrations } from './integrationsCapture';
 import { processSyncOutbox } from './syncOps';
@@ -607,9 +609,22 @@ app.whenReady().then(() => {
   );
   resetLockSessionFromSettings(getSettingsMap());
   const ud = app.getPath('userData');
+  if (isDev) {
+    const cur = getSettingsMap()['licenseServerUrl'] ?? '';
+    if (!cur.trim()) {
+      setSetting('licenseServerUrl', 'http://localhost:3001');
+      refreshSettingsCache();
+    }
+  }
   const licenseUrl = getSettingsMap()['licenseServerUrl'] ?? '';
   refreshLicenseFromDisk(ud, licenseUrl);
   void tryRefreshLicenseFromNetwork(ud, licenseUrl);
+  setInterval(() => {
+    const url = getSettingsMap()['licenseServerUrl'] ?? '';
+    if (url.trim().startsWith('http') && hasStoredLicenseKey(ud)) {
+      void tryRefreshLicenseFromNetwork(ud, url);
+    }
+  }, 60 * 60 * 1000);
   void refreshEnterprisePolicyIfConfigured(ud);
   setInterval(() => {
     void refreshEnterprisePolicyIfConfigured(ud);

@@ -21,11 +21,8 @@ const SNIPPET_CAP_PAID = 2_000_000;
 
 function getSnippetLimit(): number {
   try {
-    const db = getDb();
-    const tierRow = db.prepare('SELECT tier FROM license WHERE id = 1').get() as
-      | { tier: string }
-      | undefined;
-    const t = tierRow?.tier ?? 'free';
+    const { getCachedTier } = require('./licenseCache') as typeof import('./licenseCache');
+    const t = getCachedTier();
     if (t === 'pro' || t === 'enterprise') return SNIPPET_CAP_PAID;
   } catch {
     /* ignore */

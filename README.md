@@ -24,7 +24,7 @@ Developer-focused **clipboard manager** for Windows: Electron + Angular, local *
 | **Enterprise** | Org policy URL, snippet feed import, audit log export, optional license server validate |
 | **Settings** | Private mode, ignore apps/patterns, themes, app lock, license tier |
 
-Pro and Enterprise tiers use **API keys** (offline-friendly prefix validation and optional HTTPS check against a self-hosted server; see `server/` and `PLAN.md`).
+Pro and Enterprise tiers use **API keys** issued by a **license server** (`DevClip-Cloud` / compatible). The desktop app **does not** unlock paid tiers from key prefixes alone; it calls `POST /api/v1/license/validate` (see `licenseServerUrl` in Settings) and caches the result for **24 hours** offline. See `PLAN.md` and `DevClip-Cloud/README.md` for local development.
 
 ## Requirements
 

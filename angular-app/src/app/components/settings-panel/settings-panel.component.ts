@@ -49,13 +49,16 @@ import { FeatureFlagService } from '../../services/feature-flag.service';
           />
         </label>
         <label class="mb-2 flex flex-col gap-1 text-zinc-300 lite:text-zinc-800">
-          <span>License server URL (optional, Enterprise / self-hosted)</span>
+          <span>License server URL (Pro / Enterprise — required for validation)</span>
           <input
             class="rounded border border-white/10 bg-[#2a2a2a] p-2 font-mono text-xs text-white lite:border-zinc-300 lite:bg-white lite:text-zinc-900"
             [(ngModel)]="licenseServerUrl"
             (blur)="onLicenseServerBlur()"
-            placeholder="https://…"
+            placeholder="http://localhost:3001"
           />
+          <span class="text-[11px] leading-snug text-zinc-500 lite:text-zinc-600">
+            Local DevClip-Cloud: run the server (default <span class="font-mono">http://localhost:3001</span>), mint a key via the admin API, then paste it here and save.
+          </span>
         </label>
         <label class="mb-2 flex flex-col gap-1 text-zinc-300 lite:text-zinc-800">
           <span>API key</span>
