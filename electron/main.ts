@@ -1,6 +1,19 @@
 import { createHash } from 'crypto';
 import { existsSync } from 'fs';
-import { app, BrowserWindow, clipboard, dialog, globalShortcut, net, protocol, screen, session } from 'electron';
+import {
+  app,
+  BrowserWindow,
+  clipboard,
+  dialog,
+  globalShortcut,
+  Menu,
+  nativeImage,
+  net,
+  protocol,
+  screen,
+  session,
+  Tray,
+} from 'electron';
 import * as path from 'path';
 import { setupAutoUpdater, checkForUpdatesOnStartup } from './autoUpdater';
 import { getSourceLabelSync } from './sourceApp';
@@ -66,6 +79,68 @@ function resolveAppIconPath(): string | undefined {
   return undefined;
 }
 
+/** PNG works reliably for `Tray` on Windows/Linux (SVG is not supported for tray icons). */
+function resolveTrayIconPath(): string | undefined {
+  const fromRoot = path.join(projectRoot, 'devclip_icon_transparent.png');
+  if (existsSync(fromRoot)) return fromRoot;
+  return undefined;
+}
+
+function showMainWindow(): void {
+  if (mainWindow && !mainWindow.isDestroyed()) {
+    mainWindow.show();
+    mainWindow.focus();
+    return;
+  }
+  createMainWindow();
+}
+
+function createTray(): void {
+  if (tray && !tray.isDestroyed()) {
+    return;
+  }
+  try {
+    const trayPath = resolveTrayIconPath();
+    let image: Electron.NativeImage | null = null;
+    if (trayPath) {
+      image = nativeImage.createFromPath(trayPath);
+      if (!image.isEmpty()) {
+        const size = process.platform === 'darwin' ? 22 : 16;
+        image = image.resize({ width: size, height: size });
+      } else {
+        image = null;
+      }
+    }
+    if (!image || image.isEmpty()) {
+      console.warn('DevClip: tray icon not found; skipping system tray.');
+      return;
+    }
+    const trayInstance = new Tray(image);
+    trayInstance.setToolTip('DevClip');
+    trayInstance.setContextMenu(
+      Menu.buildFromTemplate([
+        {
+          label: 'Open DevClip',
+          click: () => showMainWindow(),
+        },
+        { type: 'separator' },
+        {
+          label: 'Quit',
+          click: () => {
+            app.quit();
+          },
+        },
+      ])
+    );
+    trayInstance.on('double-click', () => {
+      showMainWindow();
+    });
+    tray = trayInstance;
+  } catch (e) {
+    console.error('DevClip: could not create system tray:', e);
+  }
+}
+
 const indexHtmlPath = path.join(
   __dirname,
   '..',
@@ -79,6 +154,9 @@ const indexHtmlPath = path.join(
 
 let mainWindow: BrowserWindow | null = null;
 let overlayWindow: BrowserWindow | null = null;
+let tray: Tray | null = null;
+/** True while `app.quit()` is in progress so the main window can close instead of hiding to tray. */
+let isQuitting = false;
 let lastClipboardText = '';
 let pollTimer: NodeJS.Timeout | null = null;
 let settingsTimer: NodeJS.Timeout | null = null;
@@ -197,9 +275,15 @@ function createMainWindow(): BrowserWindow {
 
   attachLoadFailureHandler(win, 'Main window');
 
+  win.on('close', (e) => {
+    if (!isQuitting) {
+      e.preventDefault();
+      win.hide();
+    }
+  });
+
   win.on('closed', () => {
     mainWindow = null;
-    app.quit();
   });
 
   mainWindow = win;
@@ -542,6 +626,7 @@ app.whenReady().then(() => {
   syncLaunchAtLogin();
   createMainWindow();
   overlayWindow = createOverlayWindow();
+  createTray();
 
   setupAutoUpdater(getMainWindow);
   if (!isDev) {
@@ -549,10 +634,12 @@ app.whenReady().then(() => {
   }
 
   app.on('activate', () => {
-    if (BrowserWindow.getAllWindows().length === 0) {
-      createMainWindow();
-    }
+    showMainWindow();
   });
+});
+
+app.on('before-quit', () => {
+  isQuitting = true;
 });
 
 app.on('will-quit', () => {
@@ -575,5 +662,5 @@ app.on('will-quit', () => {
 });
 
 app.on('window-all-closed', () => {
-  // Quit is driven by main window `closed` -> app.quit(); overlay stays hidden, not the lifecycle driver.
+  // Closing the main window hides to tray; quitting is via tray menu / Cmd+Q / explicit app.quit().
 });

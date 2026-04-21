@@ -7,6 +7,7 @@ files:
   - dist/**/*
   - angular-app/dist/**/*
   - package.json
+  - devclip_icon_transparent.png
 extraResources:
   - from: database/schema.sql
     to: schema.sql

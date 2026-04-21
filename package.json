@@ -76,6 +76,7 @@
       "dist/**/*",
       "angular-app/dist/**/*",
       "database/schema.sql",
+      "devclip_icon_transparent.png",
       "!**/*.map"
     ],
     "win": {
